@@ -1,9 +1,235 @@
 <!doctype html>
-<html lang='en'>
-<head><meta charset='utf-8'><title>EV & Kelly App</title></head>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta name="theme-color" content="#0b5fff" />
+  <title>EV + Kelly Calculator</title>
+  <style>
+    :root{
+      --bg:#0b0d10; --card:#12151b; --muted:#9fb0c3; --text:#e9f0f7; --acc:#0b5fff; --good:#16c784; --bad:#ff4d4f;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+    header{padding:18px 16px 6px; position:sticky; top:0; background:linear-gradient(180deg, rgba(11,13,16,.98), rgba(11,13,16,.8) 70%, rgba(11,13,16,0)); backdrop-filter:saturate(140%) blur(6px); z-index:2; }
+    h1{font-size:20px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
+    h1 span.logo{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--acc);font-weight:800;color:white}
+    .wrap{padding:12px 14px 80px;max-width:680px;margin:0 auto}
+    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;margin:10px 0}
+    .row{display:grid;grid-template-columns:1fr 1fr; gap:10px}
+    label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px}
+    input[type="number"]{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#0e1117;color:var(--text);font-size:16px;appearance:textfield}
+    input::placeholder{color:#738394}
+    input[type="range"]{width:100%}
+    .krow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+    .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+    button{padding:8px 10px;border:1px solid rgba(255,255,255,.1);background:#0e1117;color:var(--text);border-radius:10px;font-size:13px}
+    button.primary{background:var(--acc);border-color:transparent;color:white}
+    .out{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .tile{background:#0e1117;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
+    .tile h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:600}
+    .big{font-size:20px;font-weight:700}
+    .sub{font-size:12px;color:var(--muted);margin-top:4px}
+    .good{color:var(--good)} .bad{color:var(--bad)}
+    .hr{height:1px;background:rgba(255,255,255,.08);margin:10px 0}
+    .muted{color:var(--muted)}
+    .footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(0deg, rgba(11,13,16,1), rgba(11,13,16,.9));padding:10px 14px;border-top:1px solid rgba(255,255,255,.06)}
+    .save-ios{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .pill{border:1px dashed rgba(255,255,255,.18);padding:6px 8px;border-radius:999px}
+    a, a:visited{color:#9ec9ff}
+    @media (max-width:420px){ .row, .out{grid-template-columns:1fr} }
+  </style>
+</head>
 <body>
-<h2>✅ EV & Kelly App</h2>
-<p>Your app is ready — this is a placeholder index.html.</p>
-<p>Reply "full code" and I will paste the full version for you to upload.</p>
+  <header>
+    <h1><span class="logo">K</span>EV & Kelly App</h1>
+    <div class="muted" style="font-size:12px">Fast stake sizing with edge, EV, and fractional Kelly.</div>
+  </header>
+
+  <div class="wrap">
+
+    <!-- Inputs -->
+    <div class="card">
+      <div class="row">
+        <div>
+          <label>Decimal odds</label>
+          <input id="odds" type="number" step="0.001" min="1.01" placeholder="e.g. 2.40" inputmode="decimal">
+        </div>
+        <div>
+          <label>Win probability % (your estimate)</label>
+          <input id="prob" type="number" step="0.1" min="0" max="100" placeholder="e.g. 45" inputmode="decimal">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Bank size (A$)</label>
+          <input id="bank" type="number" step="1" min="0" placeholder="e.g. 5000" inputmode="decimal">
+        </div>
+        <div>
+          <label>Kelly fraction</label>
+          <div class="krow">
+            <input id="fraction" type="range" min="0" max="1" step="0.05" value="0.5" />
+            <div id="fractionLabel" class="pill">0.50×</div>
+          </div>
+          <div class="btns">
+            <button type="button" data-frac="0.25">0.25×</button>
+            <button type="button" data-frac="0.5">0.50×</button>
+            <button type="button" data-frac="0.75">0.75×</button>
+            <button type="button" data-frac="1">1.00×</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btns" style="margin-top:10px">
+        <button type="button" id="btnFair">Set prob to fair (1/odds)</button>
+        <button type="button" id="btnClear">Clear</button>
+      </div>
+    </div>
+
+    <!-- Outputs -->
+    <div class="card">
+      <div class="out">
+
+        <div class="tile">
+          <h3>Edge vs market</h3>
+          <div id="edge" class="big">—</div>
+          <div class="sub">Your prob − implied prob</div>
+        </div>
+
+        <div class="tile">
+          <h3>EV per $1 stake</h3>
+          <div id="evPct" class="big">—</div>
+          <div class="sub">Positive = +EV</div>
+        </div>
+
+        <div class="tile">
+          <h3>Full Kelly stake %</h3>
+          <div id="kellyPct" class="big">—</div>
+          <div class="sub">Before applying fraction</div>
+        </div>
+
+        <div class="tile">
+          <h3>Suggested bet (A$)</h3>
+          <div id="betAmt" class="big">—</div>
+          <div class="sub"><span id="fracNote">0.50×</span> of Kelly on your bank</div>
+        </div>
+
+      </div>
+
+      <div class="hr"></div>
+      <div class="muted" id="explain" style="font-size:12px;line-height:1.5">
+        Enter odds, your win probability and bank. We’ll compute: edge, EV, Kelly %, and a dollar stake using your chosen Kelly fraction.
+      </div>
+    </div>
+
+    <!-- Quick examples -->
+    <div class="card">
+      <div class="btns">
+        <button type="button" class="primary" data-demo="2.4,45,5000,0.5">Demo: 2.40 @ 45% on $5k</button>
+        <button type="button" data-demo="1.8,60,2500,0.25">1.80 @ 60%</button>
+        <button type="button" data-demo="3.2,35,10000,0.5">3.20 @ 35%</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Save to Home Screen helper -->
+  <div class="footer">
+    <div class="save-ios">
+      <span class="pill">Tip</span>
+      Add to Home Screen: share icon ▸ <b>Add to Home Screen</b> — opens full-screen like an app.
+    </div>
+  </div>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const nf = new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0});
+  const pf = (x,dp=2)=> (isFinite(x)? (x*100).toFixed(dp)+'%':'—');
+  const df = (x,dp=2)=> isFinite(x)? Number(x).toFixed(dp):'—';
+
+  const oddsEl = $('odds'), probEl = $('prob'), bankEl = $('bank'), fracEl = $('fraction');
+  const edgeEl = $('edge'), evPctEl = $('evPct'), kellyPctEl = $('kellyPct'), betAmtEl = $('betAmt');
+  const fracLabel = $('fractionLabel'), fracNote = $('fracNote'), explain = $('explain');
+
+  // Buttons
+  document.querySelectorAll('button[data-frac]').forEach(b=>{
+    b.addEventListener('click', ()=>{ fracEl.value=b.dataset.frac; update(); });
+  });
+  document.querySelectorAll('button[data-demo]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      const [o,p,bank,f]=b.dataset.demo.split(',').map(Number);
+      oddsEl.value=o; probEl.value=p; bankEl.value=bank; fracEl.value=f; update();
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+
+  $('btnFair').addEventListener('click', ()=>{
+    const o = parseFloat(oddsEl.value);
+    if(o>1){ probEl.value = df(100/ o,2); update(); }
+  });
+  $('btnClear').addEventListener('click', ()=>{
+    [oddsEl,probEl,bankEl].forEach(el=>el.value='');
+    fracEl.value = 0.5; update();
+  });
+
+  [oddsEl, probEl, bankEl].forEach(el=> el.addEventListener('input', update));
+  fracEl.addEventListener('input', update);
+
+  function update(){
+    const O   = parseFloat(oddsEl.value);
+    const pct = parseFloat(probEl.value);
+    const B   = Math.max(0, parseFloat(bankEl.value));
+    const f   = parseFloat(fracEl.value);
+
+    fracLabel.textContent = df(f,2)+'×';
+    fracNote.textContent  = df(f,2)+'×';
+
+    if(!(O>1) || !(pct>=0 && pct<=100)){
+      edgeEl.textContent = evPctEl.textContent = kellyPctEl.textContent = betAmtEl.textContent = '—';
+      return;
+    }
+
+    const p = pct/100;
+    const q = 1-p;
+    const b = O-1;
+
+    // Implied probability from odds
+    const p_imp = 1/O;
+    const edge = p - p_imp; // absolute edge (probability points)
+
+    // EV per $1 stake: p*b - q
+    const ev_per1 = p*b - q;
+
+    // Kelly (fraction of bankroll) f* = (b*p - q)/b
+    let kelly = (b*p - q)/b;
+    // Clamp for display (negative means 0 stake)
+    const kelly_clamped = Math.max(0, kelly);
+    const bet = (isFinite(B) ? B : 0) * kelly_clamped * Math.max(0,f);
+
+    // EV on the suggested bet
+    const ev_dollars = bet * ev_per1;
+
+    // Paint results
+    edgeEl.textContent   = (edge>=0?'+':'') + pf(edge,2);
+    edgeEl.className     = 'big ' + (edge>=0?'good':'bad');
+
+    evPctEl.textContent  = (ev_per1>=0?'+':'') + pf(ev_per1,2);
+    evPctEl.className    = 'big ' + (ev_per1>=0?'good':'bad');
+
+    kellyPctEl.textContent = (kelly_clamped>0?pf(kelly_clamped,2):'0.00%');
+    kellyPctEl.className    = 'big';
+
+    betAmtEl.textContent = (bet>0? nf.format(bet): '—');
+
+    explain.innerHTML =
+      `Implied probability: <b>${pf(p_imp,2)}</b> • Your probability: <b>${pf(p,2)}</b> •
+       Expected value for the suggested stake: <b>${ev_dollars>=0?'+':''}${nf.format(ev_dollars)}</b>`;
+  }
+
+  update();
+})();
+</script>
 </body>
 </html>
