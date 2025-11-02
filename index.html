@@ -1,306 +1,318 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>EV & Kelly App</title>
-  <meta name="description" content="Fast stake sizing with edge, EV, and fractional Kelly — with an NBL helper tab." />
-  <link rel="icon" href="data:,">
-  <!-- Tailwind CDN (no build needed) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { ui: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Helvetica', 'Apple Color Emoji', 'Arial', 'sans-serif'] }
-        }
-      },
-      darkMode: 'class'
-    }
-  </script>
-  <style>
-    /* iOS safe-area padding for full-bleed feel */
-    .safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-    /* Compact tap targets */
-    .btn { @apply px-3 py-2 rounded-md text-sm font-medium; }
-    .seg { @apply inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md; }
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>EV & Kelly App</title>
+<meta name="description" content="Fast stake sizing with edge, EV and fractional Kelly — with NBL helper and bet history." />
+<link rel="icon" href="data:,">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>tailwind.config={theme:{extend:{fontFamily:{ui:['ui-sans-serif','system-ui','Segoe UI','Roboto','Helvetica','Apple Color Emoji','Arial','sans-serif']}}}};</script>
+<style>
+  .safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+  .card { @apply rounded-xl border border-zinc-800 bg-zinc-900/60 backdrop-blur p-4; }
+  input, .btn { @apply bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2; }
+  .btn { @apply text-sm font-medium; }
+  .grid2 { @apply grid grid-cols-2 gap-3; }
+  .navbtn { @apply flex flex-col items-center justify-center gap-1 text-xs py-2 px-3 rounded-md; }
+  .navbtn.active { @apply bg-zinc-800 text-white; }
+</style>
 </head>
 
 <body class="bg-black text-zinc-100 font-ui selection:bg-zinc-700">
+  <!-- Header -->
   <header class="safe sticky top-0 z-30 bg-black/85 backdrop-blur border-b border-zinc-800">
-    <div class="max-w-screen-sm mx-auto flex items-center justify-between py-3">
-      <div class="min-w-0">
-        <h1 class="text-lg font-semibold leading-tight">EV & Kelly App</h1>
-        <p class="text-xs text-zinc-400">Fast stake sizing with edge, EV & fractional Kelly.</p>
+    <div class="max-w-screen-sm mx-auto px-3 py-3">
+      <div class="flex items-center gap-2">
+        <div class="w-6 h-6 rounded-md bg-blue-500/90 flex items-center justify-center font-bold">K</div>
+        <div class="min-w-0">
+          <h1 class="text-lg font-semibold leading-tight">EV & Kelly App</h1>
+          <p class="text-xs text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly.</p>
+        </div>
       </div>
-      <a href="https://github.com/huzzbet/huzzbet.github.io" class="text-xs text-zinc-400 underline decoration-dotted" target="_blank" rel="noreferrer">Source</a>
     </div>
-    <!-- Tabs -->
-    <nav class="max-w-screen-sm mx-auto pb-2">
-      <div id="tabs" class="grid grid-cols-3 gap-2 px-3">
-        <button data-tab="kelly" class="seg bg-zinc-800">Kelly</button>
-        <button data-tab="ev" class="seg bg-zinc-900">EV</button>
-        <button data-tab="nbl" class="seg bg-zinc-900">NBL Helper</button>
-      </div>
-    </nav>
   </header>
 
-  <main class="safe max-w-screen-sm mx-auto px-3 pt-3 pb-28 space-y-6">
+  <!-- MAIN PANELS -->
+  <main class="safe max-w-screen-sm mx-auto px-3 pt-3 pb-24 space-y-5">
 
-    <!-- KELLY TAB -->
-    <section data-panel="kelly" class="space-y-4">
-      <h2 class="sr-only">Kelly Sizing</h2>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="text-xs text-zinc-400">Decimal Odds</span>
-          <input id="k-odds" type="number" step="0.01" min="1.01"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 placeholder="e.g., 2.10">
-        </label>
-        <label class="block">
-          <span class="text-xs text-zinc-400">Win Prob. (p %)</span>
-          <input id="k-prob" type="number" step="0.1" min="0" max="100"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 placeholder="e.g., 52">
-        </label>
-      </div>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="text-xs text-zinc-400">Bankroll ($)</span>
-          <input id="k-bank" type="number" step="1" min="0"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 placeholder="e.g., 5000">
-        </label>
-        <label class="block">
-          <span class="text-xs text-zinc-400">Fraction (0–1)</span>
-          <input id="k-frac" type="number" step="0.05" min="0" max="1"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 value="0.5" placeholder="0.5 = half Kelly">
-        </label>
-      </div>
-
-      <div class="flex gap-2">
-        <button id="k-calc" class="btn bg-white/90 text-black">Calculate</button>
-        <button id="k-clear" class="btn bg-zinc-800">Clear</button>
-      </div>
-
-      <div id="k-out" class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-1 hidden">
-        <div class="flex items-center justify-between"><span class="text-zinc-400">Kelly % (full)</span><strong id="k-kellyPct">—</strong></div>
-        <div class="flex items-center justify-between"><span class="text-zinc-400">Stake @ Fraction</span><strong id="k-stake">—</strong></div>
-        <div class="flex items-center justify-between"><span class="text-zinc-400">EV per $1</span><strong id="k-ev">—</strong></div>
-        <p id="k-note" class="text-xs text-zinc-400 pt-1"></p>
-      </div>
-    </section>
-
-    <!-- EV TAB -->
-    <section data-panel="ev" class="space-y-4 hidden">
-      <h2 class="sr-only">Expected Value</h2>
-
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block">
-          <span class="text-xs text-zinc-400">Decimal Odds</span>
-          <input id="e-odds" type="number" step="0.01" min="1.01"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 placeholder="e.g., 1.75">
-        </label>
-        <label class="block">
-          <span class="text-xs text-zinc-400">Win Prob. (p %)</span>
-          <input id="e-prob" type="number" step="0.1" min="0" max="100"
-                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
-                 placeholder="e.g., 60">
-        </label>
-      </div>
-
-      <div class="flex gap-2">
-        <button id="e-calc" class="btn bg-white/90 text-black">Calculate</button>
-        <button id="e-clear" class="btn bg-zinc-800">Clear</button>
-      </div>
-
-      <div id="e-out" class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-1 hidden">
-        <div class="flex items-center justify-between"><span class="text-zinc-400">EV per $1</span><strong id="e-ev">—</strong></div>
-        <div class="flex items-center justify-between"><span class="text-zinc-400">Edge vs Break-even</span><strong id="e-edge">—</strong></div>
-        <div class="flex items-center justify-between"><span class="text-zinc-400">Break-even p*</span><strong id="e-be">—</strong></div>
-        <p class="text-xs text-zinc-400 pt-1">EV = p × odds − 1</p>
-      </div>
-    </section>
-
-    <!-- NBL HELPER TAB (lightweight placeholder you can extend) -->
-    <section data-panel="nbl" class="space-y-4 hidden">
-      <h2 class="sr-only">NBL Helper</h2>
-
-      <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-3">
-        <p class="text-zinc-300">Quick entry for NBL lines:</p>
-        <div class="grid grid-cols-2 gap-3">
+    <!-- ===== CALCULATOR (DEFAULT) ===== -->
+    <section data-panel="calc" class="space-y-4">
+      <div class="card space-y-3">
+        <div class="grid2">
           <label class="block">
-            <span class="text-xs text-zinc-400">Team A Win %</span>
-            <input id="n-a" type="number" step="0.1" min="0" max="100"
-                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="e.g., 54">
+            <span class="text-xs text-zinc-400">Decimal odds</span>
+            <input id="odds" type="number" min="1.01" step="0.01" placeholder="e.g. 2.40" />
           </label>
           <label class="block">
-            <span class="text-xs text-zinc-400">Team B Win %</span>
-            <input id="n-b" type="number" step="0.1" min="0" max="100"
-                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="e.g., 46">
+            <span class="text-xs text-zinc-400">Win probability % (your estimate)</span>
+            <input id="pPct" type="number" min="0" max="100" step="0.1" placeholder="e.g. 45" />
           </label>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+
+        <div class="grid2">
+          <label class="block">
+            <span class="text-xs text-zinc-400">Bank size (A$)</span>
+            <input id="bank" type="number" min="0" step="1" placeholder="e.g. 5000" />
+          </label>
+          <div class="block">
+            <div class="flex items-center justify-between">
+              <span class="text-xs text-zinc-400">Kelly fraction</span>
+              <span id="fracLbl" class="text-xs bg-zinc-800 rounded-md px-2 py-1">0.50x</span>
+            </div>
+            <input id="frac" type="range" min="0" max="1" step="0.05" value="0.5" class="w-full mt-2" />
+            <div class="mt-2 grid grid-cols-4 gap-2">
+              <button class="btn" data-frac="0.25">0.25x</button>
+              <button class="btn" data-frac="0.50">0.50x</button>
+              <button class="btn" data-frac="0.75">0.75x</button>
+              <button class="btn" data-frac="1.00">1.00x</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button id="setFair" class="btn">Set prob to fair (1/odds)</button>
+          <button id="clearAll" class="btn">Clear</button>
+        </div>
+      </div>
+
+      <div class="grid md:grid-cols-2 gap-3">
+        <div class="card">
+          <div class="text-sm text-zinc-400">Edge vs market</div>
+          <div id="edgeOut" class="text-xl font-semibold mt-1">—</div>
+          <p class="text-xs text-zinc-500 mt-1">Your prob − implied prob</p>
+        </div>
+        <div class="card">
+          <div class="text-sm text-zinc-400">EV per $1 stake</div>
+          <div id="evOut" class="text-xl font-semibold mt-1">—</div>
+          <p class="text-xs text-zinc-500 mt-1">Positive = +EV</p>
+        </div>
+        <div class="card">
+          <div class="text-sm text-zinc-400">Full Kelly stake %</div>
+          <div id="kellyPctOut" class="text-xl font-semibold mt-1">—</div>
+          <p class="text-xs text-zinc-500 mt-1">Before applying fraction</p>
+        </div>
+        <div class="card">
+          <div class="text-sm text-zinc-400">Suggested bet (A$)</div>
+          <div id="stakeOut" class="text-xl font-semibold mt-1">—</div>
+          <p class="text-xs text-zinc-500 mt-1"><span id="fracNote">0.50x</span> of Kelly on your bank</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-zinc-500">Enter odds, your win probability and bank. We’ll compute: edge, EV, Kelly %, and a dollar stake using your chosen Kelly fraction.</p>
+
+      <div class="flex gap-2">
+        <button id="saveBet" class="btn bg-white/90 text-black">Save to History</button>
+        <button id="demo1" class="btn">Demo: 2.40 @ 45% on $5k</button>
+        <button id="demo2" class="btn">1.80 @ 60%</button>
+      </div>
+    </section>
+
+    <!-- ===== EV COMPARE ===== -->
+    <section data-panel="compare" class="space-y-3 hidden">
+      <div class="card space-y-3">
+        <div class="grid2">
+          <label class="block">
+            <span class="text-xs text-zinc-400">Team/Side A win %</span>
+            <input id="c-pa" type="number" step="0.1" min="0" max="100" placeholder="e.g. 54" />
+          </label>
           <label class="block">
             <span class="text-xs text-zinc-400">Odds A</span>
-            <input id="n-oa" type="number" step="0.01" min="1.01"
-                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="1.85">
+            <input id="c-oa" type="number" step="0.01" min="1.01" placeholder="e.g. 1.85" />
+          </label>
+        </div>
+        <div class="grid2">
+          <label class="block">
+            <span class="text-xs text-zinc-400">Team/Side B win %</span>
+            <input id="c-pb" type="number" step="0.1" min="0" max="100" placeholder="e.g. 46" />
           </label>
           <label class="block">
             <span class="text-xs text-zinc-400">Odds B</span>
-            <input id="n-ob" type="number" step="0.01" min="1.01"
-                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="2.05">
+            <input id="c-ob" type="number" step="0.01" min="1.01" placeholder="e.g. 2.05" />
           </label>
         </div>
         <div class="flex gap-2">
-          <button id="n-calc" class="btn bg-white/90 text-black">Compare EV</button>
-          <button id="n-clear" class="btn bg-zinc-800">Clear</button>
-        </div>
-        <div id="n-out" class="text-sm space-y-1 hidden">
-          <div class="flex items-center justify-between"><span class="text-zinc-400">EV A</span><strong id="n-eva">—</strong></div>
-          <div class="flex items-center justify-between"><span class="text-zinc-400">EV B</span><strong id="n-evb">—</strong></div>
-          <div class="flex items-center justify-between"><span class="text-zinc-400">Better Side</span><strong id="n-best">—</strong></div>
+          <button id="c-calc" class="btn bg-white/90 text-black">Compare EV</button>
+          <button id="c-clear" class="btn">Clear</button>
         </div>
       </div>
-      <p class="text-xs text-zinc-500">Tip: Long-press outputs to copy.</p>
+      <div class="card space-y-1">
+        <div class="flex items-center justify-between text-sm"><span class="text-zinc-400">EV A</span><strong id="c-eva">—</strong></div>
+        <div class="flex items-center justify-between text-sm"><span class="text-zinc-400">EV B</span><strong id="c-evb">—</strong></div>
+        <div class="flex items-center justify-between text-sm"><span class="text-zinc-400">Better Side</span><strong id="c-best">—</strong></div>
+      </div>
     </section>
+
+    <!-- ===== NBL HELPER (placeholder to extend) ===== -->
+    <section data-panel="nbl" class="space-y-3 hidden">
+      <div class="card">
+        <p class="text-sm text-zinc-300">NBL helper coming next: quick totals/line calculator, pace & form presets.</p>
+      </div>
+    </section>
+
+    <!-- ===== HISTORY ===== -->
+    <section data-panel="history" class="space-y-3 hidden">
+      <div class="card">
+        <div class="flex items-center justify-between">
+          <h2 class="font-semibold">Bet history (local)</h2>
+          <div class="flex gap-2">
+            <button id="exportCSV" class="btn">Export CSV</button>
+            <button id="clearHist" class="btn">Clear</button>
+          </div>
+        </div>
+        <div id="histEmpty" class="text-sm text-zinc-500 mt-2">No saved bets yet.</div>
+        <div id="hist" class="mt-2 space-y-2"></div>
+      </div>
+    </section>
+
   </main>
 
-  <!-- Bottom bar with quick actions -->
+  <!-- BOTTOM NAV -->
   <footer class="safe fixed bottom-0 inset-x-0 bg-black/85 backdrop-blur border-t border-zinc-800">
-    <div class="max-w-screen-sm mx-auto px-3 py-2 flex items-center justify-between">
-      <div class="text-xs text-zinc-400">Auto-save on change</div>
-      <button id="quick-half" class="btn bg-zinc-800 text-zinc-100">Half-Kelly</button>
+    <div class="max-w-screen-sm mx-auto px-3 py-2 grid grid-cols-4 gap-2">
+      <button class="navbtn active" data-go="calc">
+        <span>Calculator</span>
+      </button>
+      <button class="navbtn" data-go="compare">
+        <span>EV Compare</span>
+      </button>
+      <button class="navbtn" data-go="nbl">
+        <span>NBL</span>
+      </button>
+      <button class="navbtn" data-go="history">
+        <span>History</span>
+      </button>
     </div>
   </footer>
 
   <script>
-    // ---------- helpers ----------
-    const $ = (sel) => document.querySelector(sel);
-    const show = (el) => el.classList.remove('hidden');
-    const hide = (el) => el.classList.add('hidden');
-    const fmt = (n, d=2) => isFinite(n) ? (n).toFixed(d) : '—';
-    const toPct = (f, d=2) => isFinite(f) ? (f*100).toFixed(d) + '%' : '—';
+    const $ = s => document.querySelector(s);
+    const $$ = s => [...document.querySelectorAll(s)];
+    const show = el => el.classList.remove('hidden');
+    const hide = el => el.classList.add('hidden');
+    const fmt = (n,d=2) => Number.isFinite(n)?n.toFixed(d):'—';
+    const pct = (f,d=2) => Number.isFinite(f)?(f*100).toFixed(d)+'%':'—';
 
-    // ---------- tab logic ----------
-    const tabBtns = [...document.querySelectorAll('#tabs [data-tab]')];
-    const panels = [...document.querySelectorAll('[data-panel]')];
-    function activateTab(name){
-      tabBtns.forEach(b => b.classList.toggle('bg-zinc-800', b.dataset.tab === name));
-      panels.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
-      localStorage.setItem('tab', name);
+    // ----- NAV -----
+    function go(panel){
+      $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.go===panel));
+      $$('[data-panel]').forEach(p=>p.classList.toggle('hidden', p.dataset.panel!==panel));
+      localStorage.setItem('panel', panel);
     }
-    tabBtns.forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
-    activateTab(localStorage.getItem('tab') || 'kelly');
+    $$('.navbtn').forEach(b=>b.addEventListener('click', ()=>go(b.dataset.go)));
+    go(localStorage.getItem('panel') || 'calc');
 
-    // ---------- persistence ----------
-    const persist = (ids) => {
-      ids.forEach(id => {
-        const el = $('#'+id);
-        const key = 'evk:'+id;
-        // load
-        const v = localStorage.getItem(key);
-        if (v !== null) el.value = v;
-        // save on input
-        el.addEventListener('input', () => localStorage.setItem(key, el.value));
-      });
-    };
-    persist(['k-odds','k-prob','k-bank','k-frac','e-odds','e-prob','n-a','n-b','n-oa','n-ob']);
+    // ----- CALC -----
+    const odds = $('#odds'), pPct = $('#pPct'), bank = $('#bank'), frac = $('#frac');
+    const fracLbl = $('#fracLbl'), fracNote = $('#fracNote');
+    function updateFracLabel(){
+      const v = parseFloat(frac.value||'0');
+      const txt = (v).toFixed(2)+'x';
+      fracLbl.textContent = txt;
+      fracNote.textContent = txt;
+    }
+    updateFracLabel();
+    frac.addEventListener('input', updateFracLabel);
+    $$('[data-frac]').forEach(b=>b.addEventListener('click', ()=>{
+      frac.value = parseFloat(b.dataset.frac);
+      updateFracLabel();
+      calc();
+    }));
 
-    // ---------- Kelly calc ----------
-    function calcKelly() {
-      const odds = parseFloat($('#k-odds').value);
-      const pPct = parseFloat($('#k-prob').value);
-      const bank = parseFloat($('#k-bank').value);
-      const frac = parseFloat($('#k-frac').value);
+    function calc(){
+      const o = parseFloat(odds.value);
+      const p = (parseFloat(pPct.value)||0)/100;
+      const bnk = parseFloat(bank.value);
+      const f = Math.min(1, Math.max(0, parseFloat(frac.value)||0));
 
-      const out = $('#k-out');
-      if (!odds || !pPct || !bank || frac===null || isNaN(frac)) { hide(out); return; }
+      if(!o || p<=0 || !bnk){ $('#edgeOut').textContent='—'; $('#evOut').textContent='—'; $('#kellyPctOut').textContent='—'; $('#stakeOut').textContent='—'; return; }
 
-      const p = pPct/100;
-      const b = odds - 1;
+      const implied = 1/o;
+      const edge = p - implied;
+      const EV = p*o - 1;
+      const B = o - 1;
       const q = 1 - p;
-      const kelly = (b*p - q) / b; // Kelly fraction of bankroll
-      const kAdj = Math.max(0, kelly); // don't go negative; zero stake if no edge
-      const stake = bank * kAdj * Math.min(1, Math.max(0, frac));
+      let kelly = (B*p - q) / B; // full Kelly fraction
+      if (!Number.isFinite(kelly)) kelly = 0;
+      kelly = Math.max(0, Math.min(1, kelly));
 
-      const evPerUnit = p*odds - 1;
-
-      $('#k-kellyPct').textContent = toPct(kAdj);
-      $('#k-stake').textContent = '$' + fmt(stake, 2);
-      $('#k-ev').textContent = fmt(evPerUnit, 3);
-
-      const be = 1/odds; // break-even probability
-      const edge = p - be;
-      $('#k-note').textContent = `Edge vs break-even: ${toPct(edge)}  |  Break-even p*: ${toPct(be)}`;
-
-      show(out);
+      $('#edgeOut').textContent = pct(edge);
+      $('#evOut').textContent = fmt(EV,3);
+      $('#kellyPctOut').textContent = pct(kelly);
+      $('#stakeOut').textContent = bnk ? '$'+fmt(bnk*kelly*f,2) : '—';
     }
-    $('#k-calc').addEventListener('click', calcKelly);
-    ['k-odds','k-prob','k-bank','k-frac'].forEach(id => $('#'+id).addEventListener('change', calcKelly));
-    $('#k-clear').addEventListener('click', () => {
-      ['k-odds','k-prob','k-bank','k-frac'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
-      hide($('#k-out'));
+
+    [odds,pPct,bank,frac].forEach(el=>el.addEventListener('input', calc));
+    $('#setFair').addEventListener('click', ()=>{
+      const o = parseFloat(odds.value); if(!o) return;
+      pPct.value = (100/o).toFixed(2); calc();
+    });
+    $('#clearAll').addEventListener('click', ()=>{
+      [odds,pPct,bank].forEach(el=>el.value='');
+      frac.value = 0.5; updateFracLabel(); calc();
     });
 
-    // quick action sets half-kelly fraction and recalcs
-    $('#quick-half').addEventListener('click', () => { $('#k-frac').value = 0.5; calcKelly(); });
+    // demos
+    $('#demo1').addEventListener('click', ()=>{ odds.value=2.40; pPct.value=45; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
+    $('#demo2').addEventListener('click', ()=>{ odds.value=1.80; pPct.value=60; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
 
-    // ---------- EV calc ----------
-    function calcEV() {
-      const odds = parseFloat($('#e-odds').value);
-      const pPct = parseFloat($('#e-prob').value);
-      const out = $('#e-out');
-      if (!odds || !pPct) { hide(out); return; }
-
-      const p = pPct/100;
-      const ev = p*odds - 1;
-      const be = 1/odds;
-      const edge = p - be;
-
-      $('#e-ev').textContent = fmt(ev, 3);
-      $('#e-edge').textContent = toPct(edge);
-      $('#e-be').textContent = toPct(be);
-      show(out);
+    // ----- EV COMPARE -----
+    function calcCompare(){
+      const pa = parseFloat($('#c-pa').value)/100;
+      const pb = parseFloat($('#c-pb').value)/100;
+      const oa = parseFloat($('#c-oa').value), ob = parseFloat($('#c-ob').value);
+      if(![pa,pb,oa,ob].every(x=>Number.isFinite(x) && x>0)){ ['c-eva','c-evb','c-best'].forEach(id=>$('#'+id).textContent='—'); return; }
+      const eva = pa*oa - 1, evb = pb*ob - 1;
+      $('#c-eva').textContent = fmt(eva,3);
+      $('#c-evb').textContent = fmt(evb,3);
+      $('#c-best').textContent = eva===evb?'Equal':(eva>evb?'Side A':'Side B');
     }
-    $('#e-calc').addEventListener('click', calcEV);
-    ['e-odds','e-prob'].forEach(id => $('#'+id).addEventListener('change', calcEV));
-    $('#e-clear').addEventListener('click', () => {
-      ['e-odds','e-prob'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
-      hide($('#e-out'));
+    $('#c-calc').addEventListener('click', calcCompare);
+    ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).addEventListener('input', calcCompare));
+    $('#c-clear').addEventListener('click', ()=>{ ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).value=''); calcCompare(); });
+
+    // ----- HISTORY (localStorage) -----
+    function loadHist(){ return JSON.parse(localStorage.getItem('evk:hist')||'[]'); }
+    function saveHist(arr){ localStorage.setItem('evk:hist', JSON.stringify(arr)); }
+    function renderHist(){
+      const list = loadHist();
+      const wrap = $('#hist'); wrap.innerHTML='';
+      if(!list.length){ show($('#histEmpty')); return; } else hide($('#histEmpty'));
+      list.slice().reverse().forEach(item=>{
+        const div = document.createElement('div');
+        div.className='border border-zinc-800 rounded-md p-2 text-sm flex flex-wrap items-center justify-between gap-2';
+        div.innerHTML = `<div>${item.ts}</div>
+                         <div>Odds ${item.odds} | p ${item.pPct}% | Bank $${item.bank}</div>
+                         <div>Frac ${item.frac} | Stake $${item.stake}</div>`;
+        wrap.appendChild(div);
+      });
+    }
+    renderHist();
+
+    $('#saveBet').addEventListener('click', ()=>{
+      const o=parseFloat(odds.value), p=parseFloat(pPct.value), b=parseFloat(bank.value); 
+      if(!o||!p||!b){ alert('Enter odds, win %, and bank first.'); return; }
+      const f=parseFloat(frac.value)||0;
+      // recompute to capture stake
+      const B=o-1, q=1-p/100, k=Math.max(0, Math.min(1, ((B*(p/100)-q)/B)||0 ));
+      const stake=(b*k*f);
+      const now=new Date(); const ts=now.toLocaleString();
+      const list=loadHist(); list.push({ts,odds:o, pPct:p, bank:b, frac:f.toFixed(2)+'x', stake:stake.toFixed(2)});
+      saveHist(list); renderHist(); go('history');
     });
 
-    // ---------- NBL helper ----------
-    function calcNBL(){
-      const a = parseFloat($('#n-a').value)/100;
-      const b = parseFloat($('#n-b').value)/100;
-      const oa = parseFloat($('#n-oa').value);
-      const ob = parseFloat($('#n-ob').value);
-      const out = $('#n-out');
-      if (![a,b,oa,ob].every(x => isFinite(x) && x>0)) { hide(out); return; }
-      const eva = a*oa - 1;
-      const evb = b*ob - 1;
-      $('#n-eva').textContent = fmt(eva,3);
-      $('#n-evb').textContent = fmt(evb,3);
-      $('#n-best').textContent = (eva === evb) ? 'Equal' : (eva > evb ? 'Team A' : 'Team B');
-      show(out);
-    }
-    $('#n-calc').addEventListener('click', calcNBL);
-    ['n-a','n-b','n-oa','n-ob'].forEach(id => $('#'+id).addEventListener('change', calcNBL));
-    $('#n-clear').addEventListener('click', () => {
-      ['n-a','n-b','n-oa','n-ob'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
-      hide($('#n-out'));
+    $('#clearHist').addEventListener('click', ()=>{ if(confirm('Clear all saved bets?')){ saveHist([]); renderHist(); } });
+    $('#exportCSV').addEventListener('click', ()=>{
+      const list=loadHist(); if(!list.length){ alert('No rows.'); return; }
+      const header=['timestamp','odds','p_pct','bank','frac','stake'];
+      const rows=list.map(r=>[r.ts,r.odds,r.pPct,r.bank,r.frac,r.stake].join(','));
+      const csv=[header.join(','),...rows].join('\n');
+      const blob=new Blob([csv],{type:'text/csv'}); const url=URL.createObjectURL(blob);
+      const a=document.createElement('a'); a.href=url; a.download='ev_kelly_history.csv'; a.click(); URL.revokeObjectURL(url);
     });
 
-    // initial autocalc if values exist
-    window.addEventListener('load', () => { calcKelly(); calcEV(); calcNBL(); });
+    // initial calc
+    calc();
   </script>
 </body>
 </html>
