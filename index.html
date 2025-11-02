@@ -1,293 +1,306 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EV & Kelly App + NBL Module</title>
-
-<!-- ====== Minimal Dark Styles (Menu + Tabs + Table) ====== -->
-<style>
-:root{ --panel:#0e0e0e; --text:#eee; --border:#222; }
-html,body{ margin:0; background:#0b0b0b; color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-h3{ margin:0; }
-
-/* Corner menu button */
-#menuBtn{
-  position:fixed; top:12px; right:12px; z-index:1000;
-  font-size:20px; padding:8px 10px; border-radius:8px;
-  border:1px solid var(--border); background:#111; color:#eee;
-}
-
-/* Slide-in menu */
-#sideMenu{
-  position:fixed; top:0; right:-320px; width:320px; height:100%;
-  background:var(--panel); color:var(--text); border-left:1px solid var(--border);
-  transition:right 180ms ease; z-index:1001; padding:12px;
-}
-#sideMenu.open{ right:0; }
-#sideMenu header{ display:flex; align-items:center; justify-content:space-between; }
-#sideMenu h3{ font-size:18px; }
-#closeMenu{ font-size:18px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:#171717; color:#eee; }
-#sideMenu nav{ margin-top:12px; display:grid; gap:8px; }
-#sideMenu .menu-item{
-  width:100%; text-align:left; padding:10px 12px; border-radius:8px;
-  background:#171717; border:1px solid #262626; color:#eee;
-}
-
-/* Page layout */
-.container{ max-width:1000px; margin:72px auto 40px; padding:0 16px; }
-.tab-panel{ margin-top:16px; }
-.tab-header{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; }
-.nbl-controls label{ margin-right:8px; }
-.card{ margin:12px 0; padding:12px; border:1px solid #262626; border-radius:10px; background:#111; }
-.scroll-x{ overflow-x:auto; }
-
-/* Table */
-table{ width:100%; border-collapse:collapse; }
-th,td{ padding:8px; border-bottom:1px solid #232323; white-space:nowrap; }
-thead th{ position:sticky; top:0; background:#0f0f0f; }
-
-/* EV badges */
-.badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; }
-.badge-neg{ background:#3a0b0b; }
-.badge-mid{ background:#3a2f0b; }
-.badge-pos{ background:#0b3a12; }
-
-/* Basic app hero (optional) */
-.hero{ margin-top:8px; padding:16px; border-radius:12px; border:1px solid #1d1d1d; background:#0f0f0f; }
-</style>
-</head>
-<body>
-
-<!-- ====== Corner Menu Button ====== -->
-<button id="menuBtn" aria-label="Open menu">☰</button>
-
-<!-- ====== Slide-in Menu ====== -->
-<aside id="sideMenu" aria-hidden="true">
-  <header>
-    <h3>Menu</h3>
-    <button id="closeMenu" aria-label="Close menu">✕</button>
-  </header>
-  <nav>
-    <button class="menu-item" data-tab="nbl">🏀 NBL — Historical Results</button>
-    <button class="menu-item" data-tab="guide">📘 EV & Kelly Guide</button>
-    <button class="menu-item" data-tab="settings">⚙️ Settings</button>
-  </nav>
-</aside>
-
-<!-- ====== Main Container ====== -->
-<div class="container">
-  <div class="hero">
-    <h2>EV & Kelly App</h2>
-    <p>Fast stake sizing with edge, EV, fractional Kelly — now with an NBL helper tab.</p>
-  </div>
-
-  <!-- NBL TAB -->
-  <section id="tab-nbl" class="tab-panel" hidden>
-    <div class="tab-header">
-      <h3>NBL Historical Results</h3>
-      <div class="nbl-controls">
-        <label>
-          Season:
-          <select id="nblSeason">
-            <option value="2024-25" selected>2024–25</option>
-          </select>
-        </label>
-        <label>
-          Market odds (home):
-          <input id="nblMarketOdds" type="number" step="0.01" placeholder="e.g. 1.95">
-        </label>
-        <button id="nblRecalc">Recalc EV</button>
-      </div>
-    </div>
-
-    <div id="nblSummary" class="card">Select a game row to see model probability, fair odds, EV and Kelly stake.</div>
-
-    <div class="scroll-x">
-      <table id="nblTable" aria-label="NBL games table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Round</th>
-            <th>Home</th>
-            <th>Away</th>
-            <th>Score</th>
-            <th>Winner</th>
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody><!-- populated by JS --></tbody>
-      </table>
-    </div>
-
-    <div id="nblTeamStats" class="card"><em>Team stats will appear here.</em></div>
-  </section>
-
-  <!-- Guide TAB -->
-  <section id="tab-guide" class="tab-panel" hidden>
-    <h3>EV & Kelly Guide</h3>
-    <p>
-      EV = p(win)×(odds−1) − (1−p(win)). Fair odds = 1 / p(win).<br>
-      Full Kelly (decimal odds): <code>k = (b·p − q) / b</code>, where <code>b = odds − 1</code>, <code>q = 1 − p</code>.
-    </p>
-  </section>
-
-  <!-- Settings TAB -->
-  <section id="tab-settings" class="tab-panel" hidden>
-    <h3>Settings</h3>
-    <label><input id="settingDecimalOdds" type="checkbox" checked> Use decimal odds</label>
-  </section>
-</div>
-
-<!-- ====== NBL Module Loader (runs after DOM ready) ====== -->
-<script>
-(function () {
-  document.addEventListener('DOMContentLoaded', function () {
-    /* ---------- MENU WIRING ---------- */
-    const menuBtn = document.getElementById('menuBtn');
-    const sideMenu = document.getElementById('sideMenu');
-    const closeMenu = document.getElementById('closeMenu');
-    const panels = document.querySelectorAll('.tab-panel');
-
-    function openTab(name){
-      panels.forEach(p => p.hidden = true);
-      const el = document.getElementById('tab-' + name);
-      if (el) el.hidden = false;
-      if (name === 'nbl') initNBL();
-    }
-
-    if (menuBtn && sideMenu && closeMenu) {
-      menuBtn.addEventListener('click', () => sideMenu.classList.add('open'));
-      closeMenu.addEventListener('click', () => sideMenu.classList.remove('open'));
-      document.querySelectorAll('#sideMenu .menu-item').forEach(btn => {
-        btn.addEventListener('click', () => {
-          openTab(btn.dataset.tab);
-          sideMenu.classList.remove('open');
-        });
-      });
-    }
-
-    /* ---------- NBL STATE + HELPERS ---------- */
-    const NBL_STATE = {
-      games: [],
-      teams: {},
-      season: '2024-25',
-      dataUrl: 'data/nbl_2024.json'   // ← update to your real JSON path
-    };
-
-    const q = sel => document.querySelector(sel);
-
-    function winnerRow(g){ return g.home_score > g.away_score ? g.home : (g.away_score > g.home_score ? g.away : 'Draw'); }
-    function totalPoints(g){ return (g.home_score||0) + (g.away_score||0); }
-    function fairOdds(p){ return p>0 ? 1/p : Infinity; }
-    function evPerDollar(pWin, odds){ const b=odds-1, q=1-pWin; return pWin*b - q; }
-    function kellyFull(pWin, odds){ const b=odds-1, q=1-pWin; return Math.max(0,(b*pWin - q)/b); }
-    function badge(ev){ if(ev<0) return '<span class="badge badge-neg">−EV</span>'; if(ev<0.02) return '<span class="badge badge-mid">~EV</span>'; return '<span class="badge badge-pos">+EV</span>'; }
-
-    function computeTeams(games){
-      const tmap = {};
-      const touch = t => (tmap[t] ??= { team:t, gp:0,w:0,l:0,ppg:0,oppg:0,home:{gp:0,w:0}, last5:[] });
-      games.forEach(g=>{
-        const h=touch(g.home), a=touch(g.away);
-        h.gp++; a.gp++; h.ppg+=g.home_score; h.oppg+=g.away_score; a.ppg+=g.away_score; a.oppg+=g.home_score;
-        h.home.gp++;
-        const w=winnerRow(g);
-        if(w===g.home){h.w++; a.l++; h.home.w++;} else if(w===g.away){a.w++; h.l++;}
-        h.last5.push(w===g.home?1:0); a.last5.push(w===g.away?1:0);
-        if(h.last5.length>5) h.last5.shift(); if(a.last5.length>5) a.last5.shift();
-      });
-      Object.values(tmap).forEach(t=>{
-        t.winPct=t.gp? t.w/t.gp:0;
-        t.ppg=t.gp? t.ppg/t.gp:0; t.oppg=t.gp? t.oppg/t.gp:0;
-        t.home.winPct=t.home.gp? t.home.w/t.home.gp:0;
-        t.last5Pct=t.last5.length? t.last5.reduce((a,b)=>a+b,0)/t.last5.length:0;
-      });
-      return tmap;
-    }
-
-    // v1 matchup: win% + last5 + home edge
-    function modelHomeWinProb(home, away){
-      const h=NBL_STATE.teams[home], a=NBL_STATE.teams[away];
-      if(!h||!a) return 0.5;
-      const base=(h.winPct - a.winPct)*0.4 + (h.last5Pct - a.last5Pct)*0.2 + (h.home.winPct - a.winPct)*0.2;
-      let p=0.5 + base + 0.04; // +4% home
-      return Math.min(0.85, Math.max(0.15, p));
-    }
-
-    async function initNBL(){
-      if (!NBL_STATE.games.length){
-        try{
-          const res = await fetch(NBL_STATE.dataUrl, { cache:'no-store' });
-          if(!res.ok) throw new Error('fetch failed');
-          NBL_STATE.games = await res.json();
-        }catch(e){
-          console.warn('Using built-in sample:', e);
-          NBL_STATE.games = [
-            {"date":"2025-01-10","season":"2024-25","round":12,"home":"Melbourne United","away":"Sydney Kings","home_score":92,"away_score":86,"venue":"John Cain Arena"},
-            {"date":"2025-01-12","season":"2024-25","round":12,"home":"Perth Wildcats","away":"New Zealand Breakers","home_score":101,"away_score":95,"venue":"RAC Arena"},
-            {"date":"2025-01-14","season":"2024-25","round":13,"home":"Illawarra Hawks","away":"Cairns Taipans","home_score":78,"away_score":83,"venue":"WIN Entertainment Centre"}
-          ];
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>EV & Kelly App</title>
+  <meta name="description" content="Fast stake sizing with edge, EV, and fractional Kelly — with an NBL helper tab." />
+  <link rel="icon" href="data:,">
+  <!-- Tailwind CDN (no build needed) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { ui: ['ui-sans-serif', 'system-ui', 'Segoe UI', 'Roboto', 'Helvetica', 'Apple Color Emoji', 'Arial', 'sans-serif'] }
         }
-        NBL_STATE.teams = computeTeams(NBL_STATE.games);
-      }
-      renderNBL();
+      },
+      darkMode: 'class'
     }
+  </script>
+  <style>
+    /* iOS safe-area padding for full-bleed feel */
+    .safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+    /* Compact tap targets */
+    .btn { @apply px-3 py-2 rounded-md text-sm font-medium; }
+    .seg { @apply inline-flex items-center justify-center px-3 py-2 text-sm font-medium rounded-md; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  </style>
+</head>
 
-    function renderNBL(){
-      const tb = q('#nblTable tbody'); if(!tb) return;
-      tb.innerHTML = '';
-      NBL_STATE.games
-        .filter(g=>g.season===NBL_STATE.season)
-        .sort((a,b)=>a.date.localeCompare(b.date))
-        .forEach(g=>{
-          const tr = document.createElement('tr');
-          tr.innerHTML = `
-            <td>${g.date}</td>
-            <td>${g.round ?? ''}</td>
-            <td>${g.home}</td>
-            <td>${g.away}</td>
-            <td>${g.home_score}–${g.away_score}</td>
-            <td>${winnerRow(g)}</td>
-            <td>${totalPoints(g)}</td>`;
-          tr.addEventListener('click', ()=> showMatchupCard(g));
-          tb.appendChild(tr);
-        });
+<body class="bg-black text-zinc-100 font-ui selection:bg-zinc-700">
+  <header class="safe sticky top-0 z-30 bg-black/85 backdrop-blur border-b border-zinc-800">
+    <div class="max-w-screen-sm mx-auto flex items-center justify-between py-3">
+      <div class="min-w-0">
+        <h1 class="text-lg font-semibold leading-tight">EV & Kelly App</h1>
+        <p class="text-xs text-zinc-400">Fast stake sizing with edge, EV & fractional Kelly.</p>
+      </div>
+      <a href="https://github.com/huzzbet/huzzbet.github.io" class="text-xs text-zinc-400 underline decoration-dotted" target="_blank" rel="noreferrer">Source</a>
+    </div>
+    <!-- Tabs -->
+    <nav class="max-w-screen-sm mx-auto pb-2">
+      <div id="tabs" class="grid grid-cols-3 gap-2 px-3">
+        <button data-tab="kelly" class="seg bg-zinc-800">Kelly</button>
+        <button data-tab="ev" class="seg bg-zinc-900">EV</button>
+        <button data-tab="nbl" class="seg bg-zinc-900">NBL Helper</button>
+      </div>
+    </nav>
+  </header>
 
-      const teamsSorted = Object.values(NBL_STATE.teams).sort((a,b)=>b.winPct-a.winPct);
-      const top = teamsSorted.slice(0,8).map(t=>`<li>${t.team}: ${(t.winPct*100).toFixed(1)}% W • PPG ${t.ppg.toFixed(1)} • OPPG ${t.oppg.toFixed(1)}</li>`).join('');
-      const sum = q('#nblSummary');
-      if (sum) sum.innerHTML = `<strong>Season ${NBL_STATE.season}</strong><ul>${top}</ul>`;
+  <main class="safe max-w-screen-sm mx-auto px-3 pt-3 pb-28 space-y-6">
 
-      const recalc = q('#nblRecalc');
-      if (recalc) recalc.onclick = () => { if (window.__lastMatch) showMatchupCard(window.__lastMatch); };
+    <!-- KELLY TAB -->
+    <section data-panel="kelly" class="space-y-4">
+      <h2 class="sr-only">Kelly Sizing</h2>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-zinc-400">Decimal Odds</span>
+          <input id="k-odds" type="number" step="0.01" min="1.01"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 placeholder="e.g., 2.10">
+        </label>
+        <label class="block">
+          <span class="text-xs text-zinc-400">Win Prob. (p %)</span>
+          <input id="k-prob" type="number" step="0.1" min="0" max="100"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 placeholder="e.g., 52">
+        </label>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-zinc-400">Bankroll ($)</span>
+          <input id="k-bank" type="number" step="1" min="0"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 placeholder="e.g., 5000">
+        </label>
+        <label class="block">
+          <span class="text-xs text-zinc-400">Fraction (0–1)</span>
+          <input id="k-frac" type="number" step="0.05" min="0" max="1"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 value="0.5" placeholder="0.5 = half Kelly">
+        </label>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="k-calc" class="btn bg-white/90 text-black">Calculate</button>
+        <button id="k-clear" class="btn bg-zinc-800">Clear</button>
+      </div>
+
+      <div id="k-out" class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-1 hidden">
+        <div class="flex items-center justify-between"><span class="text-zinc-400">Kelly % (full)</span><strong id="k-kellyPct">—</strong></div>
+        <div class="flex items-center justify-between"><span class="text-zinc-400">Stake @ Fraction</span><strong id="k-stake">—</strong></div>
+        <div class="flex items-center justify-between"><span class="text-zinc-400">EV per $1</span><strong id="k-ev">—</strong></div>
+        <p id="k-note" class="text-xs text-zinc-400 pt-1"></p>
+      </div>
+    </section>
+
+    <!-- EV TAB -->
+    <section data-panel="ev" class="space-y-4 hidden">
+      <h2 class="sr-only">Expected Value</h2>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block">
+          <span class="text-xs text-zinc-400">Decimal Odds</span>
+          <input id="e-odds" type="number" step="0.01" min="1.01"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 placeholder="e.g., 1.75">
+        </label>
+        <label class="block">
+          <span class="text-xs text-zinc-400">Win Prob. (p %)</span>
+          <input id="e-prob" type="number" step="0.1" min="0" max="100"
+                 class="mt-1 w-full bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2"
+                 placeholder="e.g., 60">
+        </label>
+      </div>
+
+      <div class="flex gap-2">
+        <button id="e-calc" class="btn bg-white/90 text-black">Calculate</button>
+        <button id="e-clear" class="btn bg-zinc-800">Clear</button>
+      </div>
+
+      <div id="e-out" class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-1 hidden">
+        <div class="flex items-center justify-between"><span class="text-zinc-400">EV per $1</span><strong id="e-ev">—</strong></div>
+        <div class="flex items-center justify-between"><span class="text-zinc-400">Edge vs Break-even</span><strong id="e-edge">—</strong></div>
+        <div class="flex items-center justify-between"><span class="text-zinc-400">Break-even p*</span><strong id="e-be">—</strong></div>
+        <p class="text-xs text-zinc-400 pt-1">EV = p × odds − 1</p>
+      </div>
+    </section>
+
+    <!-- NBL HELPER TAB (lightweight placeholder you can extend) -->
+    <section data-panel="nbl" class="space-y-4 hidden">
+      <h2 class="sr-only">NBL Helper</h2>
+
+      <div class="rounded-lg border border-zinc-800 bg-zinc-900 p-3 text-sm space-y-3">
+        <p class="text-zinc-300">Quick entry for NBL lines:</p>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-zinc-400">Team A Win %</span>
+            <input id="n-a" type="number" step="0.1" min="0" max="100"
+                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="e.g., 54">
+          </label>
+          <label class="block">
+            <span class="text-xs text-zinc-400">Team B Win %</span>
+            <input id="n-b" type="number" step="0.1" min="0" max="100"
+                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="e.g., 46">
+          </label>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <span class="text-xs text-zinc-400">Odds A</span>
+            <input id="n-oa" type="number" step="0.01" min="1.01"
+                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="1.85">
+          </label>
+          <label class="block">
+            <span class="text-xs text-zinc-400">Odds B</span>
+            <input id="n-ob" type="number" step="0.01" min="1.01"
+                   class="mt-1 w-full bg-zinc-950 border border-zinc-800 rounded-md px-3 py-2" placeholder="2.05">
+          </label>
+        </div>
+        <div class="flex gap-2">
+          <button id="n-calc" class="btn bg-white/90 text-black">Compare EV</button>
+          <button id="n-clear" class="btn bg-zinc-800">Clear</button>
+        </div>
+        <div id="n-out" class="text-sm space-y-1 hidden">
+          <div class="flex items-center justify-between"><span class="text-zinc-400">EV A</span><strong id="n-eva">—</strong></div>
+          <div class="flex items-center justify-between"><span class="text-zinc-400">EV B</span><strong id="n-evb">—</strong></div>
+          <div class="flex items-center justify-between"><span class="text-zinc-400">Better Side</span><strong id="n-best">—</strong></div>
+        </div>
+      </div>
+      <p class="text-xs text-zinc-500">Tip: Long-press outputs to copy.</p>
+    </section>
+  </main>
+
+  <!-- Bottom bar with quick actions -->
+  <footer class="safe fixed bottom-0 inset-x-0 bg-black/85 backdrop-blur border-t border-zinc-800">
+    <div class="max-w-screen-sm mx-auto px-3 py-2 flex items-center justify-between">
+      <div class="text-xs text-zinc-400">Auto-save on change</div>
+      <button id="quick-half" class="btn bg-zinc-800 text-zinc-100">Half-Kelly</button>
+    </div>
+  </footer>
+
+  <script>
+    // ---------- helpers ----------
+    const $ = (sel) => document.querySelector(sel);
+    const show = (el) => el.classList.remove('hidden');
+    const hide = (el) => el.classList.add('hidden');
+    const fmt = (n, d=2) => isFinite(n) ? (n).toFixed(d) : '—';
+    const toPct = (f, d=2) => isFinite(f) ? (f*100).toFixed(d) + '%' : '—';
+
+    // ---------- tab logic ----------
+    const tabBtns = [...document.querySelectorAll('#tabs [data-tab]')];
+    const panels = [...document.querySelectorAll('[data-panel]')];
+    function activateTab(name){
+      tabBtns.forEach(b => b.classList.toggle('bg-zinc-800', b.dataset.tab === name));
+      panels.forEach(p => p.classList.toggle('hidden', p.dataset.panel !== name));
+      localStorage.setItem('tab', name);
     }
+    tabBtns.forEach(b => b.addEventListener('click', () => activateTab(b.dataset.tab)));
+    activateTab(localStorage.getItem('tab') || 'kelly');
 
-    function showMatchupCard(g){
-      window.__lastMatch = g;
-      const pHome = modelHomeWinProb(g.home, g.away);
-      const fair = fairOdds(pHome);
-      const market = parseFloat(q('#nblMarketOdds')?.value || '0');
-      const ev = market>1 ? evPerDollar(pHome, market) : 0;
-      const kelly = market>1 ? kellyFull(pHome, market) : 0;
+    // ---------- persistence ----------
+    const persist = (ids) => {
+      ids.forEach(id => {
+        const el = $('#'+id);
+        const key = 'evk:'+id;
+        // load
+        const v = localStorage.getItem(key);
+        if (v !== null) el.value = v;
+        // save on input
+        el.addEventListener('input', () => localStorage.setItem(key, el.value));
+      });
+    };
+    persist(['k-odds','k-prob','k-bank','k-frac','e-odds','e-prob','n-a','n-b','n-oa','n-ob']);
 
-      const html = `
-        <div class="card">
-          <div><strong>${g.home}</strong> vs <strong>${g.away}</strong> — ${g.date} (R${g.round ?? ''})</div>
-          <div>Model home win prob: <strong>${(pHome*100).toFixed(1)}%</strong> • Fair odds: <strong>${fair.toFixed(2)}</strong></div>
-          <div>Market (home): <strong>${isFinite(market)&&market>1 ? market.toFixed(2) : '—'}</strong>
-            • EV/$: <strong>${ev.toFixed(3)}</strong> ${badge(ev)}
-            • Full-Kelly: <strong>${(kelly*100).toFixed(2)}%</strong></div>
-          <small>Note: v1 model = season/last-5 blend + 4% home edge; clamp 15–85%.</small>
-        </div>`;
-      const sum = q('#nblSummary');
-      if (sum) sum.innerHTML = html;
+    // ---------- Kelly calc ----------
+    function calcKelly() {
+      const odds = parseFloat($('#k-odds').value);
+      const pPct = parseFloat($('#k-prob').value);
+      const bank = parseFloat($('#k-bank').value);
+      const frac = parseFloat($('#k-frac').value);
+
+      const out = $('#k-out');
+      if (!odds || !pPct || !bank || frac===null || isNaN(frac)) { hide(out); return; }
+
+      const p = pPct/100;
+      const b = odds - 1;
+      const q = 1 - p;
+      const kelly = (b*p - q) / b; // Kelly fraction of bankroll
+      const kAdj = Math.max(0, kelly); // don't go negative; zero stake if no edge
+      const stake = bank * kAdj * Math.min(1, Math.max(0, frac));
+
+      const evPerUnit = p*odds - 1;
+
+      $('#k-kellyPct').textContent = toPct(kAdj);
+      $('#k-stake').textContent = '$' + fmt(stake, 2);
+      $('#k-ev').textContent = fmt(evPerUnit, 3);
+
+      const be = 1/odds; // break-even probability
+      const edge = p - be;
+      $('#k-note').textContent = `Edge vs break-even: ${toPct(edge)}  |  Break-even p*: ${toPct(be)}`;
+
+      show(out);
     }
+    $('#k-calc').addEventListener('click', calcKelly);
+    ['k-odds','k-prob','k-bank','k-frac'].forEach(id => $('#'+id).addEventListener('change', calcKelly));
+    $('#k-clear').addEventListener('click', () => {
+      ['k-odds','k-prob','k-bank','k-frac'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
+      hide($('#k-out'));
+    });
 
-    // For quick testing, auto-open NBL tab once:
-    // document.querySelector('[data-tab="nbl"]')?.click();
-  });
-})();
-</script>
+    // quick action sets half-kelly fraction and recalcs
+    $('#quick-half').addEventListener('click', () => { $('#k-frac').value = 0.5; calcKelly(); });
 
+    // ---------- EV calc ----------
+    function calcEV() {
+      const odds = parseFloat($('#e-odds').value);
+      const pPct = parseFloat($('#e-prob').value);
+      const out = $('#e-out');
+      if (!odds || !pPct) { hide(out); return; }
+
+      const p = pPct/100;
+      const ev = p*odds - 1;
+      const be = 1/odds;
+      const edge = p - be;
+
+      $('#e-ev').textContent = fmt(ev, 3);
+      $('#e-edge').textContent = toPct(edge);
+      $('#e-be').textContent = toPct(be);
+      show(out);
+    }
+    $('#e-calc').addEventListener('click', calcEV);
+    ['e-odds','e-prob'].forEach(id => $('#'+id).addEventListener('change', calcEV));
+    $('#e-clear').addEventListener('click', () => {
+      ['e-odds','e-prob'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
+      hide($('#e-out'));
+    });
+
+    // ---------- NBL helper ----------
+    function calcNBL(){
+      const a = parseFloat($('#n-a').value)/100;
+      const b = parseFloat($('#n-b').value)/100;
+      const oa = parseFloat($('#n-oa').value);
+      const ob = parseFloat($('#n-ob').value);
+      const out = $('#n-out');
+      if (![a,b,oa,ob].every(x => isFinite(x) && x>0)) { hide(out); return; }
+      const eva = a*oa - 1;
+      const evb = b*ob - 1;
+      $('#n-eva').textContent = fmt(eva,3);
+      $('#n-evb').textContent = fmt(evb,3);
+      $('#n-best').textContent = (eva === evb) ? 'Equal' : (eva > evb ? 'Team A' : 'Team B');
+      show(out);
+    }
+    $('#n-calc').addEventListener('click', calcNBL);
+    ['n-a','n-b','n-oa','n-ob'].forEach(id => $('#'+id).addEventListener('change', calcNBL));
+    $('#n-clear').addEventListener('click', () => {
+      ['n-a','n-b','n-oa','n-ob'].forEach(id => { $('#'+id).value = ''; localStorage.removeItem('evk:'+id); });
+      hide($('#n-out'));
+    });
+
+    // initial autocalc if values exist
+    window.addEventListener('load', () => { calcKelly(); calcEV(); calcNBL(); });
+  </script>
 </body>
 </html>
