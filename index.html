@@ -233,3 +233,68 @@
 </script>
 </body>
 </html>
+<!-- Add inside <body> near the top of your existing app -->
+<button id="menuBtn" aria-label="Open menu">☰</button>
+
+<aside id="sideMenu" aria-hidden="true">
+  <header>
+    <h3>Menu</h3>
+    <button id="closeMenu" aria-label="Close menu">✕</button>
+  </header>
+  <nav>
+    <button class="menu-item" data-tab="nbl">🏀 NBL — Historical Results</button>
+    <button class="menu-item" data-tab="guide">📘 EV & Kelly Guide</button>
+    <button class="menu-item" data-tab="settings">⚙️ Settings</button>
+  </nav>
+</aside>
+
+<!-- Tab panels (hide by default, we’ll toggle in JS) -->
+<section id="tab-nbl" class="tab-panel" hidden>
+  <div class="tab-header">
+    <h3>NBL Historical Results</h3>
+    <div class="nbl-controls">
+      <label>
+        Season:
+        <select id="nblSeason">
+          <option value="2024-25" selected>2024–25</option>
+        </select>
+      </label>
+      <label>
+        Market odds (home):
+        <input id="nblMarketOdds" type="number" step="0.01" placeholder="e.g. 1.95">
+      </label>
+      <button id="nblRecalc">Recalc EV</button>
+    </div>
+  </div>
+
+  <div id="nblSummary" class="card"></div>
+
+  <div class="scroll-x">
+    <table id="nblTable">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Round</th>
+          <th>Home</th>
+          <th>Away</th>
+          <th>Score</th>
+          <th>Winner</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div id="nblTeamStats" class="card"></div>
+</section>
+
+<section id="tab-guide" class="tab-panel" hidden>
+  <h3>EV & Kelly Guide</h3>
+  <p>EV = p(win)×(odds−1) − (1−p(win)). Fair odds = 1 / p(win). Full-Kelly = (b·p − q) / b, where b = odds−1, q = 1−p.</p>
+</section>
+
+<section id="tab-settings" class="tab-panel" hidden>
+  <h3>Settings</h3>
+  <label><input id="settingDecimalOdds" type="checkbox" checked> Use decimal odds</label>
+</section>
