@@ -1,431 +1,68 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#0b5fff" />
-  <title>EV + Kelly Calculator</title>
-  <style>
-    :root{
-      --bg:#0b0d10; --card:#12151b; --muted:#9fb0c3; --text:#e9f0f7; --acc:#0b5fff; --good:#16c784; --bad:#ff4d4f;
-    }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
-    header{padding:18px 16px 6px; position:sticky; top:0; background:linear-gradient(180deg, rgba(11,13,16,.98), rgba(11,13,16,.8) 70%, rgba(11,13,16,0)); backdrop-filter:saturate(140%) blur(6px); z-index:2; }
-    h1{font-size:20px;margin:0 0 6px;display:flex;align-items:center;gap:8px}
-    h1 span.logo{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:6px;background:var(--acc);font-weight:800;color:white}
-    .wrap{padding:12px 14px 80px;max-width:680px;margin:0 auto}
-    .card{background:var(--card);border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px;margin:10px 0}
-    .row{display:grid;grid-template-columns:1fr 1fr; gap:10px}
-    label{display:block;font-size:12px;color:var(--muted);margin:6px 0 6px}
-    input[type="number"]{width:100%;padding:12px 12px;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:#0e1117;color:var(--text);font-size:16px;appearance:textfield}
-    input::placeholder{color:#738394}
-    input[type="range"]{width:100%}
-    .krow{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
-    .btns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-    button{padding:8px 10px;border:1px solid rgba(255,255,255,.1);background:#0e1117;color:var(--text);border-radius:10px;font-size:13px}
-    button.primary{background:var(--acc);border-color:transparent;color:white}
-    .out{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .tile{background:#0e1117;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:12px}
-    .tile h3{margin:0 0 6px;font-size:13px;color:var(--muted);font-weight:600}
-    .big{font-size:20px;font-weight:700}
-    .sub{font-size:12px;color:var(--muted);margin-top:4px}
-    .good{color:var(--good)} .bad{color:var(--bad)}
-    .hr{height:1px;background:rgba(255,255,255,.08);margin:10px 0}
-    .muted{color:var(--muted)}
-    .footer{position:fixed;left:0;right:0;bottom:0;background:linear-gradient(0deg, rgba(11,13,16,1), rgba(11,13,16,.9));padding:10px 14px;border-top:1px solid rgba(255,255,255,.06)}
-    .save-ios{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-    .pill{border:1px dashed rgba(255,255,255,.18);padding:6px 8px;border-radius:999px}
-    a, a:visited{color:#9ec9ff}
-    @media (max-width:420px){ .row, .out{grid-template-columns:1fr} }
-  </style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV & Kelly App + NBL Module</title>
+
+<!-- ====== Minimal Dark Styles (Menu + Tabs + Table) ====== -->
+<style>
+:root{ --panel:#0e0e0e; --text:#eee; --border:#222; }
+html,body{ margin:0; background:#0b0b0b; color:var(--text); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+h3{ margin:0; }
+
+/* Corner menu button */
+#menuBtn{
+  position:fixed; top:12px; right:12px; z-index:1000;
+  font-size:20px; padding:8px 10px; border-radius:8px;
+  border:1px solid var(--border); background:#111; color:#eee;
+}
+
+/* Slide-in menu */
+#sideMenu{
+  position:fixed; top:0; right:-320px; width:320px; height:100%;
+  background:var(--panel); color:var(--text); border-left:1px solid var(--border);
+  transition:right 180ms ease; z-index:1001; padding:12px;
+}
+#sideMenu.open{ right:0; }
+#sideMenu header{ display:flex; align-items:center; justify-content:space-between; }
+#sideMenu h3{ font-size:18px; }
+#closeMenu{ font-size:18px; padding:6px 10px; border-radius:8px; border:1px solid var(--border); background:#171717; color:#eee; }
+#sideMenu nav{ margin-top:12px; display:grid; gap:8px; }
+#sideMenu .menu-item{
+  width:100%; text-align:left; padding:10px 12px; border-radius:8px;
+  background:#171717; border:1px solid #262626; color:#eee;
+}
+
+/* Page layout */
+.container{ max-width:1000px; margin:72px auto 40px; padding:0 16px; }
+.tab-panel{ margin-top:16px; }
+.tab-header{ display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; }
+.nbl-controls label{ margin-right:8px; }
+.card{ margin:12px 0; padding:12px; border:1px solid #262626; border-radius:10px; background:#111; }
+.scroll-x{ overflow-x:auto; }
+
+/* Table */
+table{ width:100%; border-collapse:collapse; }
+th,td{ padding:8px; border-bottom:1px solid #232323; white-space:nowrap; }
+thead th{ position:sticky; top:0; background:#0f0f0f; }
+
+/* EV badges */
+.badge{ display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; margin-left:6px; }
+.badge-neg{ background:#3a0b0b; }
+.badge-mid{ background:#3a2f0b; }
+.badge-pos{ background:#0b3a12; }
+
+/* Basic app hero (optional) */
+.hero{ margin-top:8px; padding:16px; border-radius:12px; border:1px solid #1d1d1d; background:#0f0f0f; }
+</style>
 </head>
-// -------- Menu wiring --------
-const menuBtn = document.getElementById('menuBtn');
-const sideMenu = document.getElementById('sideMenu');
-const closeMenu = document.getElementById('closeMenu');
-
-menuBtn?.addEventListener('click', () => sideMenu.classList.add('open'));
-closeMenu?.addEventListener('click', () => sideMenu.classList.remove('open'));
-document.querySelectorAll('#sideMenu .menu-item').forEach(btn => {
-  btn.addEventListener('click', () => {
-    openTab(btn.dataset.tab);
-    sideMenu.classList.remove('open');
-  });
-});
-
-function openTab(name) {
-  document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
-  const el = document.getElementById(`tab-${name}`);
-  if (el) el.hidden = false;
-  if (name === 'nbl') initNBL();
-}
-
-// --------- NBL Module ---------
-let NBL_STATE = {
-  games: [],
-  teams: {}, // aggregated stats
-  season: '2024-25',
-  dataUrl: 'data/nbl_2024.json', // <-- update this path in your repo
-};
-
-// Utility: winner, totals, fair odds, EV, Kelly
-function winnerRow(g) {
-  if (g.home_score > g.away_score) return g.home;
-  if (g.away_score > g.home_score) return g.away;
-  return 'Draw';
-}
-function totalPoints(g) { return (g.home_score ?? 0) + (g.away_score ?? 0); }
-function fairOdds(p) { return p > 0 ? (1 / p) : Infinity; }
-function evPerDollar(pWin, decOdds) {
-  const b = decOdds - 1; const q = 1 - pWin;
-  return pWin * b - q;
-}
-function kellyFractionFull(pWin, decOdds) {
-  const b = decOdds - 1; const q = 1 - pWin;
-  const k = (b * pWin - q) / b;
-  return Math.max(0, k); // clamp negative to 0
-}
-
-// Aggregate team stats (simple v1: season win%, home/away win%, PPG/OPPG)
-function computeTeams(games) {
-  const teams = {};
-  const touch = t => teams[t] ??= { team: t, gp:0, w:0, l:0, ppg:0, oppg:0, home:{gp:0,w:0}, away:{gp:0,w:0}, last5:[] };
-  games.forEach(g => {
-    const h = touch(g.home), a = touch(g.away);
-    h.gp++; a.gp++;
-    h.ppg += g.home_score; h.oppg += g.away_score;
-    a.ppg += g.away_score; a.oppg += g.home_score;
-    h.home.gp++; a.away.gp++;
-    const w = winnerRow(g);
-    if (w === g.home){ h.w++; a.l++; h.home.w++; }
-    else if (w === g.away){ a.w++; h.l++; }
-    // naive last5: push 1 (win) or 0 (loss)
-    h.last5.push(w===g.home?1:0); a.last5.push(w===g.away?1:0);
-    if (h.last5.length>5) h.last5.shift(); if (a.last5.length>5) a.last5.shift();
-  });
-  for (const t of Object.values(teams)) {
-    t.winPct = t.gp ? t.w / t.gp : 0;
-    t.ppg = t.gp ? t.ppg / t.gp : 0;
-    t.oppg = t.gp ? t.oppg / t.gp : 0;
-    t.home.winPct = t.home.gp ? t.home.w / t.home.gp : 0;
-    t.last5Pct = t.last5.length ? t.last5.reduce((a,b)=>a+b,0)/t.last5.length : 0;
-  }
-  return teams;
-}
-
-// Simple v1 matchup model: base on season win% with mild home edge
-function modelHomeWinProb(homeTeam, awayTeam) {
-  const h = NBL_STATE.teams[homeTeam], a = NBL_STATE.teams[awayTeam];
-  if (!h || !a) return 0.5;
-  // Elo-like blend without ratings: season win% + last5 momentum + home bump
-  const base = (h.winPct - a.winPct) * 0.4 + (h.last5Pct - a.last5Pct) * 0.2 + (h.home.winPct - a.winPct) * 0.2;
-  let p = 0.5 + base;           // centered at 50/50
-  p += 0.04;                    // +4% home-court bump
-  return Math.min(0.85, Math.max(0.15, p)); // clamp for sanity
-}
-
-async function initNBL() {
-  // load once
-  if (!NBL_STATE.games.length) {
-    try {
-      const res = await fetch(NBL_STATE.dataUrl, { cache: 'no-store' });
-      if (!res.ok) throw new Error('Failed to fetch NBL data');
-      NBL_STATE.games = await res.json();
-    } catch (e) {
-      // Fallback: small embedded sample so the tab always works
-      console.warn(e);
-      NBL_STATE.games = [
-        {"date":"2025-01-10","season":"2024-25","round":12,"home":"Melbourne United","away":"Sydney Kings","home_score":92,"away_score":86,"venue":"John Cain Arena"}
-      ];
-    }
-    // compute aggregates
-    NBL_STATE.teams = computeTeams(NBL_STATE.games);
-  }
-  renderNBL();
-}
-
-function renderNBL() {
-  // Table
-  const tb = document.querySelector('#nblTable tbody');
-  tb.innerHTML = '';
-  NBL_STATE.games
-    .filter(g => g.season === NBL_STATE.season)
-    .sort((a,b) => a.date.localeCompare(b.date))
-    .forEach(g => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${g.date}</td>
-        <td>${g.round ?? ''}</td>
-        <td>${g.home}</td>
-        <td>${g.away}</td>
-        <td>${g.home_score}–${g.away_score}</td>
-        <td>${winnerRow(g)}</td>
-        <td>${totalPoints(g)}</td>
-      `;
-      // Click row => mini matchup card vs market
-      tr.addEventListener('click', () => showMatchupCard(g));
-      tb.appendChild(tr);
-    });
-
-  // Team summary card
-  const teamsSorted = Object.values(NBL_STATE.teams).sort((a,b) => b.winPct - a.winPct);
-  const top = teamsSorted.slice(0,8).map(t => 
-    `<li>${t.team}: ${(t.winPct*100).toFixed(1)}% W • PPG ${t.ppg.toFixed(1)} • OPPG ${t.oppg.toFixed(1)}</li>`
-  ).join('');
-  document.getElementById('nblSummary').innerHTML = `
-    <strong>Season ${NBL_STATE.season}</strong>
-    <ul>${top}</ul>
-  `;
-
-  document.getElementById('nblTeamStats').innerHTML = `
-    <details>
-      <summary>All team stats</summary>
-      ${teamsSorted.map(t => `
-        <div style="margin:.25rem 0">
-          <strong>${t.team}</strong> — GP ${t.gp}, W ${t.w}, L ${t.l},
-          Win% ${(t.winPct*100).toFixed(1)}%, Home ${(t.home.winPct*100).toFixed(1)}%,
-          Last5 ${(t.last5Pct*100).toFixed(0)}%, PPG ${t.ppg.toFixed(1)}, OPPG ${t.oppg.toFixed(1)}
-        </div>
-      `).join('')}
-    </details>
-  `;
-
-  // Recalc button uses currently selected row (or none)
-  document.getElementById('nblRecalc').onclick = () => {
-    const odds = parseFloat(document.getElementById('nblMarketOdds').value);
-    if (!isFinite(odds) || odds <= 1) return;
-    // If a last-clicked matchup exists, recompute EV
-    if (window.__lastMatch) showMatchupCard(window.__lastMatch);
-  };
-}
-
-function badge(ev) {
-  if (ev < 0) return `<span class="badge badge-neg">−EV</span>`;
-  if (ev < 0.02) return `<span class="badge badge-mid">~EV</span>`;
-  return `<span class="badge badge-pos">+EV</span>`;
-}
-
-function showMatchupCard(g) {
-  window.__lastMatch = g;
-  const pHome = modelHomeWinProb(g.home, g.away);
-  const fair = fairOdds(pHome);
-  const market = parseFloat(document.getElementById('nblMarketOdds').value || '0');
-  const ev = market > 1 ? evPerDollar(pHome, market) : 0;
-  const kelly = market > 1 ? kellyFractionFull(pHome, market) : 0;
-
-  const html = `
-    <div class="card">
-      <div><strong>${g.home}</strong> vs <strong>${g.away}</strong> — ${g.date} (R${g.round ?? ''})</div>
-      <div>Model home win prob: <strong>${(pHome*100).toFixed(1)}%</strong>
-        • Fair odds: <strong>${fair.toFixed(2)}</strong></div>
-      <div>Market (home): <strong>${isFinite(market)&&market>1 ? market.toFixed(2) : '—'}</strong>
-        • EV/$: <strong>${ev.toFixed(3)}</strong> ${badge(ev)}
-        • Full-Kelly: <strong>${(kelly*100).toFixed(2)}%</strong></div>
-      <small>Note: v1 model = season/last-5 blend + 4% home edge; clamp 15–85%.</small>
-    </div>
-  `;
-  document.getElementById('nblSummary').innerHTML = html;
-}
-
-// Optional: autoload NBL tab on first open
-// openTab('nbl');
 <body>
-  <header>
-    <h1><span class="logo">K</span>EV & Kelly App</h1>
-    <div class="muted" style="font-size:12px">Fast stake sizing with edge, EV, and fractional Kelly.</div>
-  </header>
 
-  <div class="wrap">
-
-    <!-- Inputs -->
-    <div class="card">
-      <div class="row">
-        <div>
-          <label>Decimal odds</label>
-          <input id="odds" type="number" step="0.001" min="1.01" placeholder="e.g. 2.40" inputmode="decimal">
-        </div>
-        <div>
-          <label>Win probability % (your estimate)</label>
-          <input id="prob" type="number" step="0.1" min="0" max="100" placeholder="e.g. 45" inputmode="decimal">
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Bank size (A$)</label>
-          <input id="bank" type="number" step="1" min="0" placeholder="e.g. 5000" inputmode="decimal">
-        </div>
-        <div>
-          <label>Kelly fraction</label>
-          <div class="krow">
-            <input id="fraction" type="range" min="0" max="1" step="0.05" value="0.5" />
-            <div id="fractionLabel" class="pill">0.50×</div>
-          </div>
-          <div class="btns">
-            <button type="button" data-frac="0.25">0.25×</button>
-            <button type="button" data-frac="0.5">0.50×</button>
-            <button type="button" data-frac="0.75">0.75×</button>
-            <button type="button" data-frac="1">1.00×</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="btns" style="margin-top:10px">
-        <button type="button" id="btnFair">Set prob to fair (1/odds)</button>
-        <button type="button" id="btnClear">Clear</button>
-      </div>
-    </div>
-
-    <!-- Outputs -->
-    <div class="card">
-      <div class="out">
-
-        <div class="tile">
-          <h3>Edge vs market</h3>
-          <div id="edge" class="big">—</div>
-          <div class="sub">Your prob − implied prob</div>
-        </div>
-
-        <div class="tile">
-          <h3>EV per $1 stake</h3>
-          <div id="evPct" class="big">—</div>
-          <div class="sub">Positive = +EV</div>
-        </div>
-
-        <div class="tile">
-          <h3>Full Kelly stake %</h3>
-          <div id="kellyPct" class="big">—</div>
-          <div class="sub">Before applying fraction</div>
-        </div>
-
-        <div class="tile">
-          <h3>Suggested bet (A$)</h3>
-          <div id="betAmt" class="big">—</div>
-          <div class="sub"><span id="fracNote">0.50×</span> of Kelly on your bank</div>
-        </div>
-
-      </div>
-
-      <div class="hr"></div>
-      <div class="muted" id="explain" style="font-size:12px;line-height:1.5">
-        Enter odds, your win probability and bank. We’ll compute: edge, EV, Kelly %, and a dollar stake using your chosen Kelly fraction.
-      </div>
-    </div>
-
-    <!-- Quick examples -->
-    <div class="card">
-      <div class="btns">
-        <button type="button" class="primary" data-demo="2.4,45,5000,0.5">Demo: 2.40 @ 45% on $5k</button>
-        <button type="button" data-demo="1.8,60,2500,0.25">1.80 @ 60%</button>
-        <button type="button" data-demo="3.2,35,10000,0.5">3.20 @ 35%</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Save to Home Screen helper -->
-  <div class="footer">
-    <div class="save-ios">
-      <span class="pill">Tip</span>
-      Add to Home Screen: share icon ▸ <b>Add to Home Screen</b> — opens full-screen like an app.
-    </div>
-  </div>
-
-<script>
-(function(){
-  const $ = id => document.getElementById(id);
-  const nf = new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0});
-  const pf = (x,dp=2)=> (isFinite(x)? (x*100).toFixed(dp)+'%':'—');
-  const df = (x,dp=2)=> isFinite(x)? Number(x).toFixed(dp):'—';
-
-  const oddsEl = $('odds'), probEl = $('prob'), bankEl = $('bank'), fracEl = $('fraction');
-  const edgeEl = $('edge'), evPctEl = $('evPct'), kellyPctEl = $('kellyPct'), betAmtEl = $('betAmt');
-  const fracLabel = $('fractionLabel'), fracNote = $('fracNote'), explain = $('explain');
-
-  // Buttons
-  document.querySelectorAll('button[data-frac]').forEach(b=>{
-    b.addEventListener('click', ()=>{ fracEl.value=b.dataset.frac; update(); });
-  });
-  document.querySelectorAll('button[data-demo]').forEach(b=>{
-    b.addEventListener('click', ()=>{
-      const [o,p,bank,f]=b.dataset.demo.split(',').map(Number);
-      oddsEl.value=o; probEl.value=p; bankEl.value=bank; fracEl.value=f; update();
-      window.scrollTo({top:0,behavior:'smooth'});
-    });
-  });
-
-  $('btnFair').addEventListener('click', ()=>{
-    const o = parseFloat(oddsEl.value);
-    if(o>1){ probEl.value = df(100/ o,2); update(); }
-  });
-  $('btnClear').addEventListener('click', ()=>{
-    [oddsEl,probEl,bankEl].forEach(el=>el.value='');
-    fracEl.value = 0.5; update();
-  });
-
-  [oddsEl, probEl, bankEl].forEach(el=> el.addEventListener('input', update));
-  fracEl.addEventListener('input', update);
-
-  function update(){
-    const O   = parseFloat(oddsEl.value);
-    const pct = parseFloat(probEl.value);
-    const B   = Math.max(0, parseFloat(bankEl.value));
-    const f   = parseFloat(fracEl.value);
-
-    fracLabel.textContent = df(f,2)+'×';
-    fracNote.textContent  = df(f,2)+'×';
-
-    if(!(O>1) || !(pct>=0 && pct<=100)){
-      edgeEl.textContent = evPctEl.textContent = kellyPctEl.textContent = betAmtEl.textContent = '—';
-      return;
-    }
-
-    const p = pct/100;
-    const q = 1-p;
-    const b = O-1;
-
-    // Implied probability from odds
-    const p_imp = 1/O;
-    const edge = p - p_imp; // absolute edge (probability points)
-
-    // EV per $1 stake: p*b - q
-    const ev_per1 = p*b - q;
-
-    // Kelly (fraction of bankroll) f* = (b*p - q)/b
-    let kelly = (b*p - q)/b;
-    // Clamp for display (negative means 0 stake)
-    const kelly_clamped = Math.max(0, kelly);
-    const bet = (isFinite(B) ? B : 0) * kelly_clamped * Math.max(0,f);
-
-    // EV on the suggested bet
-    const ev_dollars = bet * ev_per1;
-
-    // Paint results
-    edgeEl.textContent   = (edge>=0?'+':'') + pf(edge,2);
-    edgeEl.className     = 'big ' + (edge>=0?'good':'bad');
-
-    evPctEl.textContent  = (ev_per1>=0?'+':'') + pf(ev_per1,2);
-    evPctEl.className    = 'big ' + (ev_per1>=0?'good':'bad');
-
-    kellyPctEl.textContent = (kelly_clamped>0?pf(kelly_clamped,2):'0.00%');
-    kellyPctEl.className    = 'big';
-
-    betAmtEl.textContent = (bet>0? nf.format(bet): '—');
-
-    explain.innerHTML =
-      `Implied probability: <b>${pf(p_imp,2)}</b> • Your probability: <b>${pf(p,2)}</b> •
-       Expected value for the suggested stake: <b>${ev_dollars>=0?'+':''}${nf.format(ev_dollars)}</b>`;
-  }
-
-  update();
-})();
-</script>
-</body>
-</html>
-<!-- Add inside <body> near the top of your existing app -->
+<!-- ====== Corner Menu Button ====== -->
 <button id="menuBtn" aria-label="Open menu">☰</button>
 
+<!-- ====== Slide-in Menu ====== -->
 <aside id="sideMenu" aria-hidden="true">
   <header>
     <h3>Menu</h3>
@@ -438,77 +75,219 @@ function showMatchupCard(g) {
   </nav>
 </aside>
 
-<!-- Tab panels (hide by default, we’ll toggle in JS) -->
-<section id="tab-nbl" class="tab-panel" hidden>
-  <div class="tab-header">
-    <h3>NBL Historical Results</h3>
-    <div class="nbl-controls">
-      <label>
-        Season:
-        <select id="nblSeason">
-          <option value="2024-25" selected>2024–25</option>
-        </select>
-      </label>
-      <label>
-        Market odds (home):
-        <input id="nblMarketOdds" type="number" step="0.01" placeholder="e.g. 1.95">
-      </label>
-      <button id="nblRecalc">Recalc EV</button>
+<!-- ====== Main Container ====== -->
+<div class="container">
+  <div class="hero">
+    <h2>EV & Kelly App</h2>
+    <p>Fast stake sizing with edge, EV, fractional Kelly — now with an NBL helper tab.</p>
+  </div>
+
+  <!-- NBL TAB -->
+  <section id="tab-nbl" class="tab-panel" hidden>
+    <div class="tab-header">
+      <h3>NBL Historical Results</h3>
+      <div class="nbl-controls">
+        <label>
+          Season:
+          <select id="nblSeason">
+            <option value="2024-25" selected>2024–25</option>
+          </select>
+        </label>
+        <label>
+          Market odds (home):
+          <input id="nblMarketOdds" type="number" step="0.01" placeholder="e.g. 1.95">
+        </label>
+        <button id="nblRecalc">Recalc EV</button>
+      </div>
     </div>
-  </div>
 
-  <div id="nblSummary" class="card"></div>
+    <div id="nblSummary" class="card">Select a game row to see model probability, fair odds, EV and Kelly stake.</div>
 
-  <div class="scroll-x">
-    <table id="nblTable">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Round</th>
-          <th>Home</th>
-          <th>Away</th>
-          <th>Score</th>
-          <th>Winner</th>
-          <th>Total</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-  </div>
+    <div class="scroll-x">
+      <table id="nblTable" aria-label="NBL games table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Round</th>
+            <th>Home</th>
+            <th>Away</th>
+            <th>Score</th>
+            <th>Winner</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody><!-- populated by JS --></tbody>
+      </table>
+    </div>
 
-  <div id="nblTeamStats" class="card"></div>
-</section>
+    <div id="nblTeamStats" class="card"><em>Team stats will appear here.</em></div>
+  </section>
 
-<section id="tab-guide" class="tab-panel" hidden>
-  <h3>EV & Kelly Guide</h3>
-  <p>EV = p(win)×(odds−1) − (1−p(win)). Fair odds = 1 / p(win). Full-Kelly = (b·p − q) / b, where b = odds−1, q = 1−p.</p>
-</section>
+  <!-- Guide TAB -->
+  <section id="tab-guide" class="tab-panel" hidden>
+    <h3>EV & Kelly Guide</h3>
+    <p>
+      EV = p(win)×(odds−1) − (1−p(win)). Fair odds = 1 / p(win).<br>
+      Full Kelly (decimal odds): <code>k = (b·p − q) / b</code>, where <code>b = odds − 1</code>, <code>q = 1 − p</code>.
+    </p>
+  </section>
 
-<section id="tab-settings" class="tab-panel" hidden>
-  <h3>Settings</h3>
-  <label><input id="settingDecimalOdds" type="checkbox" checked> Use decimal odds</label>
-</section>
+  <!-- Settings TAB -->
+  <section id="tab-settings" class="tab-panel" hidden>
+    <h3>Settings</h3>
+    <label><input id="settingDecimalOdds" type="checkbox" checked> Use decimal odds</label>
+  </section>
+</div>
 
-<style>
-/* --- MENU + NBL TAB CSS --- */
+<!-- ====== NBL Module Loader (runs after DOM ready) ====== -->
+<script>
+(function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    /* ---------- MENU WIRING ---------- */
+    const menuBtn = document.getElementById('menuBtn');
+    const sideMenu = document.getElementById('sideMenu');
+    const closeMenu = document.getElementById('closeMenu');
+    const panels = document.querySelectorAll('.tab-panel');
 
-/* Corner menu button */
-#menuBtn {
-  position: fixed; top: 12px; right: 12px;
-  font-size: 20px; padding: 8px 10px;
-  border-radius: 8px; border: 1px solid var(--border, #333);
-  background: var(--panel, #111); color: var(--text, #eee);
-  z-index: 1000;
-}
+    function openTab(name){
+      panels.forEach(p => p.hidden = true);
+      const el = document.getElementById('tab-' + name);
+      if (el) el.hidden = false;
+      if (name === 'nbl') initNBL();
+    }
 
-/* Slide-in side menu */
-#sideMenu {
-  position: fixed; top: 0; right: -320px; width: 320px; height: 100%;
-  background: var(--panel, #0e0e0e); color: var(--text, #eee);
-  border-left: 1px solid var(--border, #222);
-  transition: right 180ms ease; z-index: 1001; padding: 12px;
-}
-#sideMenu.open { right: 0; }
-#sideMenu header { display: flex; align-items: center; justify-content: space-between; }
-/* ... and paste the ENTIRE section 3 CSS here ... */
-</style>
+    if (menuBtn && sideMenu && closeMenu) {
+      menuBtn.addEventListener('click', () => sideMenu.classList.add('open'));
+      closeMenu.addEventListener('click', () => sideMenu.classList.remove('open'));
+      document.querySelectorAll('#sideMenu .menu-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          openTab(btn.dataset.tab);
+          sideMenu.classList.remove('open');
+        });
+      });
+    }
+
+    /* ---------- NBL STATE + HELPERS ---------- */
+    const NBL_STATE = {
+      games: [],
+      teams: {},
+      season: '2024-25',
+      dataUrl: 'data/nbl_2024.json'   // ← update to your real JSON path
+    };
+
+    const q = sel => document.querySelector(sel);
+
+    function winnerRow(g){ return g.home_score > g.away_score ? g.home : (g.away_score > g.home_score ? g.away : 'Draw'); }
+    function totalPoints(g){ return (g.home_score||0) + (g.away_score||0); }
+    function fairOdds(p){ return p>0 ? 1/p : Infinity; }
+    function evPerDollar(pWin, odds){ const b=odds-1, q=1-pWin; return pWin*b - q; }
+    function kellyFull(pWin, odds){ const b=odds-1, q=1-pWin; return Math.max(0,(b*pWin - q)/b); }
+    function badge(ev){ if(ev<0) return '<span class="badge badge-neg">−EV</span>'; if(ev<0.02) return '<span class="badge badge-mid">~EV</span>'; return '<span class="badge badge-pos">+EV</span>'; }
+
+    function computeTeams(games){
+      const tmap = {};
+      const touch = t => (tmap[t] ??= { team:t, gp:0,w:0,l:0,ppg:0,oppg:0,home:{gp:0,w:0}, last5:[] });
+      games.forEach(g=>{
+        const h=touch(g.home), a=touch(g.away);
+        h.gp++; a.gp++; h.ppg+=g.home_score; h.oppg+=g.away_score; a.ppg+=g.away_score; a.oppg+=g.home_score;
+        h.home.gp++;
+        const w=winnerRow(g);
+        if(w===g.home){h.w++; a.l++; h.home.w++;} else if(w===g.away){a.w++; h.l++;}
+        h.last5.push(w===g.home?1:0); a.last5.push(w===g.away?1:0);
+        if(h.last5.length>5) h.last5.shift(); if(a.last5.length>5) a.last5.shift();
+      });
+      Object.values(tmap).forEach(t=>{
+        t.winPct=t.gp? t.w/t.gp:0;
+        t.ppg=t.gp? t.ppg/t.gp:0; t.oppg=t.gp? t.oppg/t.gp:0;
+        t.home.winPct=t.home.gp? t.home.w/t.home.gp:0;
+        t.last5Pct=t.last5.length? t.last5.reduce((a,b)=>a+b,0)/t.last5.length:0;
+      });
+      return tmap;
+    }
+
+    // v1 matchup: win% + last5 + home edge
+    function modelHomeWinProb(home, away){
+      const h=NBL_STATE.teams[home], a=NBL_STATE.teams[away];
+      if(!h||!a) return 0.5;
+      const base=(h.winPct - a.winPct)*0.4 + (h.last5Pct - a.last5Pct)*0.2 + (h.home.winPct - a.winPct)*0.2;
+      let p=0.5 + base + 0.04; // +4% home
+      return Math.min(0.85, Math.max(0.15, p));
+    }
+
+    async function initNBL(){
+      if (!NBL_STATE.games.length){
+        try{
+          const res = await fetch(NBL_STATE.dataUrl, { cache:'no-store' });
+          if(!res.ok) throw new Error('fetch failed');
+          NBL_STATE.games = await res.json();
+        }catch(e){
+          console.warn('Using built-in sample:', e);
+          NBL_STATE.games = [
+            {"date":"2025-01-10","season":"2024-25","round":12,"home":"Melbourne United","away":"Sydney Kings","home_score":92,"away_score":86,"venue":"John Cain Arena"},
+            {"date":"2025-01-12","season":"2024-25","round":12,"home":"Perth Wildcats","away":"New Zealand Breakers","home_score":101,"away_score":95,"venue":"RAC Arena"},
+            {"date":"2025-01-14","season":"2024-25","round":13,"home":"Illawarra Hawks","away":"Cairns Taipans","home_score":78,"away_score":83,"venue":"WIN Entertainment Centre"}
+          ];
+        }
+        NBL_STATE.teams = computeTeams(NBL_STATE.games);
+      }
+      renderNBL();
+    }
+
+    function renderNBL(){
+      const tb = q('#nblTable tbody'); if(!tb) return;
+      tb.innerHTML = '';
+      NBL_STATE.games
+        .filter(g=>g.season===NBL_STATE.season)
+        .sort((a,b)=>a.date.localeCompare(b.date))
+        .forEach(g=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${g.date}</td>
+            <td>${g.round ?? ''}</td>
+            <td>${g.home}</td>
+            <td>${g.away}</td>
+            <td>${g.home_score}–${g.away_score}</td>
+            <td>${winnerRow(g)}</td>
+            <td>${totalPoints(g)}</td>`;
+          tr.addEventListener('click', ()=> showMatchupCard(g));
+          tb.appendChild(tr);
+        });
+
+      const teamsSorted = Object.values(NBL_STATE.teams).sort((a,b)=>b.winPct-a.winPct);
+      const top = teamsSorted.slice(0,8).map(t=>`<li>${t.team}: ${(t.winPct*100).toFixed(1)}% W • PPG ${t.ppg.toFixed(1)} • OPPG ${t.oppg.toFixed(1)}</li>`).join('');
+      const sum = q('#nblSummary');
+      if (sum) sum.innerHTML = `<strong>Season ${NBL_STATE.season}</strong><ul>${top}</ul>`;
+
+      const recalc = q('#nblRecalc');
+      if (recalc) recalc.onclick = () => { if (window.__lastMatch) showMatchupCard(window.__lastMatch); };
+    }
+
+    function showMatchupCard(g){
+      window.__lastMatch = g;
+      const pHome = modelHomeWinProb(g.home, g.away);
+      const fair = fairOdds(pHome);
+      const market = parseFloat(q('#nblMarketOdds')?.value || '0');
+      const ev = market>1 ? evPerDollar(pHome, market) : 0;
+      const kelly = market>1 ? kellyFull(pHome, market) : 0;
+
+      const html = `
+        <div class="card">
+          <div><strong>${g.home}</strong> vs <strong>${g.away}</strong> — ${g.date} (R${g.round ?? ''})</div>
+          <div>Model home win prob: <strong>${(pHome*100).toFixed(1)}%</strong> • Fair odds: <strong>${fair.toFixed(2)}</strong></div>
+          <div>Market (home): <strong>${isFinite(market)&&market>1 ? market.toFixed(2) : '—'}</strong>
+            • EV/$: <strong>${ev.toFixed(3)}</strong> ${badge(ev)}
+            • Full-Kelly: <strong>${(kelly*100).toFixed(2)}%</strong></div>
+          <small>Note: v1 model = season/last-5 blend + 4% home edge; clamp 15–85%.</small>
+        </div>`;
+      const sum = q('#nblSummary');
+      if (sum) sum.innerHTML = html;
+    }
+
+    // For quick testing, auto-open NBL tab once:
+    // document.querySelector('[data-tab="nbl"]')?.click();
+  });
+})();
+</script>
+
+</body>
+</html>
