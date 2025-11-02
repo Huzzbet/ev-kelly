@@ -4,63 +4,95 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>EV & Kelly App</title>
-<meta name="description" content="Fast stake sizing with edge, EV and fractional Kelly — with NBL helper and bet history." />
+<meta name="description" content="Fast stake sizing with edge, EV and fractional Kelly — with EV Compare, NBL and History." />
 <link rel="icon" href="data:,">
 <script src="https://cdn.tailwindcss.com"></script>
-<script>tailwind.config={theme:{extend:{fontFamily:{ui:['ui-sans-serif','system-ui','Segoe UI','Roboto','Helvetica','Apple Color Emoji','Arial','sans-serif']}}}};</script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { ui: ['Inter', 'ui-sans-serif','system-ui','Segoe UI','Roboto','Helvetica','Arial','sans-serif'] },
+        boxShadow: {
+          card: '0 1px 0 0 rgba(255,255,255,0.06) inset, 0 8px 24px -12px rgba(0,0,0,0.7)'
+        }
+      }
+    }
+  }
+</script>
 <style>
+  :root { color-scheme: dark; }
+  html, body { background: #0a0a0a; }
   .safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-  .card { @apply rounded-xl border border-zinc-800 bg-zinc-900/60 backdrop-blur p-4; }
-  input, .btn { @apply bg-zinc-900 border border-zinc-800 rounded-md px-3 py-2; }
-  .btn { @apply text-sm font-medium; }
-  .grid2 { @apply grid grid-cols-2 gap-3; }
-  .navbtn { @apply flex flex-col items-center justify-center gap-1 text-xs py-2 px-3 rounded-md; }
-  .navbtn.active { @apply bg-zinc-800 text-white; }
+  .card { @apply rounded-2xl bg-zinc-900/60 border border-zinc-800 shadow-card backdrop-blur px-4 py-3; }
+  .field { @apply w-full bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-[15px] placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition; }
+  .btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 active:scale-[.99] transition; }
+  .btn-primary { @apply border-transparent bg-white/95 text-black hover:bg-white; }
+  .chip { @apply inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-300; }
+
+  /* Bottom nav */
+  .navbtn { @apply flex flex-col items-center justify-center gap-1 text-[11px] py-2 rounded-lg text-zinc-400; }
+  .navbtn.active { @apply bg-zinc-800 text-zinc-100; }
+
+  /* iOS range styling */
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 28px; background: transparent; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: #3f3f46; border-radius: 999px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 999px; margin-top: -8px; box-shadow: 0 3px 10px rgba(0,0,0,.35); }
+  input[type="range"]::-moz-range-track { height: 4px; background: #3f3f46; border-radius: 999px; }
+  input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #fff; border: none; border-radius: 999px; }
+
+  /* Fix iOS Safari autofill white boxes */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: #e4e4e7;
+    -webkit-box-shadow: 0 0 0px 1000px #0c0c0d inset;
+    transition: background-color 9999s ease-in-out 0s;
+    caret-color: #e4e4e7;
+  }
 </style>
 </head>
 
-<body class="bg-black text-zinc-100 font-ui selection:bg-zinc-700">
-  <!-- Header -->
-  <header class="safe sticky top-0 z-30 bg-black/85 backdrop-blur border-b border-zinc-800">
+<body class="text-zinc-100 font-ui selection:bg-zinc-700">
+  <!-- HEADER -->
+  <header class="safe sticky top-0 z-30 border-b border-zinc-800 bg-gradient-to-b from-zinc-950 to-zinc-900/60 backdrop-blur">
     <div class="max-w-screen-sm mx-auto px-3 py-3">
-      <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded-md bg-blue-500/90 flex items-center justify-center font-bold">K</div>
+      <div class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center font-bold">K</div>
         <div class="min-w-0">
-          <h1 class="text-lg font-semibold leading-tight">EV & Kelly App</h1>
-          <p class="text-xs text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly.</p>
+          <h1 class="text-[18px] font-semibold leading-tight">EV & Kelly App</h1>
+          <p class="text-[12px] text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly.</p>
         </div>
       </div>
     </div>
   </header>
 
-  <!-- MAIN PANELS -->
+  <!-- MAIN -->
   <main class="safe max-w-screen-sm mx-auto px-3 pt-3 pb-24 space-y-5">
-
-    <!-- ===== CALCULATOR (DEFAULT) ===== -->
+    <!-- CALCULATOR -->
     <section data-panel="calc" class="space-y-4">
       <div class="card space-y-3">
-        <div class="grid2">
+        <div class="grid grid-cols-2 gap-3">
           <label class="block">
-            <span class="text-xs text-zinc-400">Decimal odds</span>
-            <input id="odds" type="number" min="1.01" step="0.01" placeholder="e.g. 2.40" />
+            <div class="text-[12px] text-zinc-400 mb-1">Decimal odds</div>
+            <input id="odds" type="number" min="1.01" step="0.01" class="field" placeholder="e.g. 2.40">
           </label>
           <label class="block">
-            <span class="text-xs text-zinc-400">Win probability % (your estimate)</span>
-            <input id="pPct" type="number" min="0" max="100" step="0.1" placeholder="e.g. 45" />
+            <div class="text-[12px] text-zinc-400 mb-1">Win probability % <span class="text-zinc-500">(your estimate)</span></div>
+            <input id="pPct" type="number" min="0" max="100" step="0.1" class="field" placeholder="e.g. 45">
           </label>
         </div>
 
-        <div class="grid2">
+        <div class="grid grid-cols-2 gap-3">
           <label class="block">
-            <span class="text-xs text-zinc-400">Bank size (A$)</span>
-            <input id="bank" type="number" min="0" step="1" placeholder="e.g. 5000" />
+            <div class="text-[12px] text-zinc-400 mb-1">Bank size (A$)</div>
+            <input id="bank" type="number" min="0" step="1" class="field" placeholder="e.g. 5000">
           </label>
           <div class="block">
-            <div class="flex items-center justify-between">
-              <span class="text-xs text-zinc-400">Kelly fraction</span>
-              <span id="fracLbl" class="text-xs bg-zinc-800 rounded-md px-2 py-1">0.50x</span>
+            <div class="flex items-center justify-between mb-1">
+              <div class="text-[12px] text-zinc-400">Kelly fraction</div>
+              <span id="fracLbl" class="chip">0.50x</span>
             </div>
-            <input id="frac" type="range" min="0" max="1" step="0.05" value="0.5" class="w-full mt-2" />
+            <input id="frac" type="range" min="0" max="1" step="0.05" value="0.5" />
             <div class="mt-2 grid grid-cols-4 gap-2">
               <button class="btn" data-frac="0.25">0.25x</button>
               <button class="btn" data-frac="0.50">0.50x</button>
@@ -79,60 +111,58 @@
       <div class="grid md:grid-cols-2 gap-3">
         <div class="card">
           <div class="text-sm text-zinc-400">Edge vs market</div>
-          <div id="edgeOut" class="text-xl font-semibold mt-1">—</div>
+          <div id="edgeOut" class="text-2xl font-semibold mt-1">—</div>
           <p class="text-xs text-zinc-500 mt-1">Your prob − implied prob</p>
         </div>
         <div class="card">
           <div class="text-sm text-zinc-400">EV per $1 stake</div>
-          <div id="evOut" class="text-xl font-semibold mt-1">—</div>
+          <div id="evOut" class="text-2xl font-semibold mt-1">—</div>
           <p class="text-xs text-zinc-500 mt-1">Positive = +EV</p>
         </div>
         <div class="card">
           <div class="text-sm text-zinc-400">Full Kelly stake %</div>
-          <div id="kellyPctOut" class="text-xl font-semibold mt-1">—</div>
+          <div id="kellyPctOut" class="text-2xl font-semibold mt-1">—</div>
           <p class="text-xs text-zinc-500 mt-1">Before applying fraction</p>
         </div>
         <div class="card">
           <div class="text-sm text-zinc-400">Suggested bet (A$)</div>
-          <div id="stakeOut" class="text-xl font-semibold mt-1">—</div>
+          <div id="stakeOut" class="text-2xl font-semibold mt-1">—</div>
           <p class="text-xs text-zinc-500 mt-1"><span id="fracNote">0.50x</span> of Kelly on your bank</p>
         </div>
       </div>
 
-      <p class="text-xs text-zinc-500">Enter odds, your win probability and bank. We’ll compute: edge, EV, Kelly %, and a dollar stake using your chosen Kelly fraction.</p>
-
-      <div class="flex gap-2">
-        <button id="saveBet" class="btn bg-white/90 text-black">Save to History</button>
+      <div class="flex flex-wrap gap-2">
+        <button id="saveBet" class="btn btn-primary">Save to History</button>
         <button id="demo1" class="btn">Demo: 2.40 @ 45% on $5k</button>
         <button id="demo2" class="btn">1.80 @ 60%</button>
       </div>
     </section>
 
-    <!-- ===== EV COMPARE ===== -->
+    <!-- EV COMPARE -->
     <section data-panel="compare" class="space-y-3 hidden">
       <div class="card space-y-3">
-        <div class="grid2">
+        <div class="grid grid-cols-2 gap-3">
           <label class="block">
-            <span class="text-xs text-zinc-400">Team/Side A win %</span>
-            <input id="c-pa" type="number" step="0.1" min="0" max="100" placeholder="e.g. 54" />
+            <div class="text-[12px] text-zinc-400 mb-1">Team/Side A win %</div>
+            <input id="c-pa" type="number" step="0.1" min="0" max="100" class="field" placeholder="e.g. 54">
           </label>
           <label class="block">
-            <span class="text-xs text-zinc-400">Odds A</span>
-            <input id="c-oa" type="number" step="0.01" min="1.01" placeholder="e.g. 1.85" />
+            <div class="text-[12px] text-zinc-400 mb-1">Odds A</div>
+            <input id="c-oa" type="number" step="0.01" min="1.01" class="field" placeholder="1.85">
           </label>
         </div>
-        <div class="grid2">
+        <div class="grid grid-cols-2 gap-3">
           <label class="block">
-            <span class="text-xs text-zinc-400">Team/Side B win %</span>
-            <input id="c-pb" type="number" step="0.1" min="0" max="100" placeholder="e.g. 46" />
+            <div class="text-[12px] text-zinc-400 mb-1">Team/Side B win %</div>
+            <input id="c-pb" type="number" step="0.1" min="0" max="100" class="field" placeholder="46">
           </label>
           <label class="block">
-            <span class="text-xs text-zinc-400">Odds B</span>
-            <input id="c-ob" type="number" step="0.01" min="1.01" placeholder="e.g. 2.05" />
+            <div class="text-[12px] text-zinc-400 mb-1">Odds B</div>
+            <input id="c-ob" type="number" step="0.01" min="1.01" class="field" placeholder="2.05">
           </label>
         </div>
         <div class="flex gap-2">
-          <button id="c-calc" class="btn bg-white/90 text-black">Compare EV</button>
+          <button id="c-calc" class="btn btn-primary">Compare EV</button>
           <button id="c-clear" class="btn">Clear</button>
         </div>
       </div>
@@ -143,14 +173,12 @@
       </div>
     </section>
 
-    <!-- ===== NBL HELPER (placeholder to extend) ===== -->
+    <!-- NBL (placeholder) -->
     <section data-panel="nbl" class="space-y-3 hidden">
-      <div class="card">
-        <p class="text-sm text-zinc-300">NBL helper coming next: quick totals/line calculator, pace & form presets.</p>
-      </div>
+      <div class="card"><p class="text-sm text-zinc-300">NBL helper (pace presets, totals & line tools) — coming soon.</p></div>
     </section>
 
-    <!-- ===== HISTORY ===== -->
+    <!-- HISTORY -->
     <section data-panel="history" class="space-y-3 hidden">
       <div class="card">
         <div class="flex items-center justify-between">
@@ -164,24 +192,15 @@
         <div id="hist" class="mt-2 space-y-2"></div>
       </div>
     </section>
-
   </main>
 
   <!-- BOTTOM NAV -->
-  <footer class="safe fixed bottom-0 inset-x-0 bg-black/85 backdrop-blur border-t border-zinc-800">
+  <footer class="safe fixed bottom-0 inset-x-0 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur">
     <div class="max-w-screen-sm mx-auto px-3 py-2 grid grid-cols-4 gap-2">
-      <button class="navbtn active" data-go="calc">
-        <span>Calculator</span>
-      </button>
-      <button class="navbtn" data-go="compare">
-        <span>EV Compare</span>
-      </button>
-      <button class="navbtn" data-go="nbl">
-        <span>NBL</span>
-      </button>
-      <button class="navbtn" data-go="history">
-        <span>History</span>
-      </button>
+      <button class="navbtn active" data-go="calc">Calculator</button>
+      <button class="navbtn" data-go="compare">EV Compare</button>
+      <button class="navbtn" data-go="nbl">NBL</button>
+      <button class="navbtn" data-go="history">History</button>
     </div>
   </footer>
 
@@ -193,7 +212,7 @@
     const fmt = (n,d=2) => Number.isFinite(n)?n.toFixed(d):'—';
     const pct = (f,d=2) => Number.isFinite(f)?(f*100).toFixed(d)+'%':'—';
 
-    // ----- NAV -----
+    // NAV
     function go(panel){
       $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.go===panel));
       $$('[data-panel]').forEach(p=>p.classList.toggle('hidden', p.dataset.panel!==panel));
@@ -202,105 +221,85 @@
     $$('.navbtn').forEach(b=>b.addEventListener('click', ()=>go(b.dataset.go)));
     go(localStorage.getItem('panel') || 'calc');
 
-    // ----- CALC -----
-    const odds = $('#odds'), pPct = $('#pPct'), bank = $('#bank'), frac = $('#frac');
-    const fracLbl = $('#fracLbl'), fracNote = $('#fracNote');
+    // CALC
+    const odds=$('#odds'), pPct=$('#pPct'), bank=$('#bank'), frac=$('#frac');
+    const fracLbl=$('#fracLbl'), fracNote=$('#fracNote');
     function updateFracLabel(){
       const v = parseFloat(frac.value||'0');
-      const txt = (v).toFixed(2)+'x';
+      const txt = v.toFixed(2)+'x';
       fracLbl.textContent = txt;
-      fracNote.textContent = txt;
+      if (fracNote) fracNote.textContent = txt;
     }
     updateFracLabel();
-    frac.addEventListener('input', updateFracLabel);
+    frac.addEventListener('input', ()=>{ updateFracLabel(); calc(); });
     $$('[data-frac]').forEach(b=>b.addEventListener('click', ()=>{
-      frac.value = parseFloat(b.dataset.frac);
-      updateFracLabel();
-      calc();
+      frac.value = parseFloat(b.dataset.frac); updateFracLabel(); calc();
     }));
 
     function calc(){
-      const o = parseFloat(odds.value);
-      const p = (parseFloat(pPct.value)||0)/100;
-      const bnk = parseFloat(bank.value);
-      const f = Math.min(1, Math.max(0, parseFloat(frac.value)||0));
-
-      if(!o || p<=0 || !bnk){ $('#edgeOut').textContent='—'; $('#evOut').textContent='—'; $('#kellyPctOut').textContent='—'; $('#stakeOut').textContent='—'; return; }
-
-      const implied = 1/o;
-      const edge = p - implied;
-      const EV = p*o - 1;
-      const B = o - 1;
-      const q = 1 - p;
-      let kelly = (B*p - q) / B; // full Kelly fraction
-      if (!Number.isFinite(kelly)) kelly = 0;
-      kelly = Math.max(0, Math.min(1, kelly));
-
-      $('#edgeOut').textContent = pct(edge);
-      $('#evOut').textContent = fmt(EV,3);
-      $('#kellyPctOut').textContent = pct(kelly);
-      $('#stakeOut').textContent = bnk ? '$'+fmt(bnk*kelly*f,2) : '—';
+      const o=parseFloat(odds.value);
+      const p=(parseFloat(pPct.value)||0)/100;
+      const bnk=parseFloat(bank.value);
+      const f=Math.min(1, Math.max(0, parseFloat(frac.value)||0));
+      if(!o || p<=0 || !bnk){
+        ['edgeOut','evOut','kellyPctOut','stakeOut'].forEach(id=>$('#'+id).textContent='—');
+        return;
+      }
+      const implied=1/o, edge=p-implied, EV=p*o-1;
+      const B=o-1, q=1-p;
+      let kelly=(B*p - q)/B; if(!Number.isFinite(kelly)) kelly=0;
+      kelly=Math.max(0, Math.min(1, kelly));
+      $('#edgeOut').textContent=pct(edge);
+      $('#evOut').textContent=fmt(EV,3);
+      $('#kellyPctOut').textContent=pct(kelly);
+      $('#stakeOut').textContent= '$'+fmt(bnk*kelly*f,2);
     }
-
-    [odds,pPct,bank,frac].forEach(el=>el.addEventListener('input', calc));
-    $('#setFair').addEventListener('click', ()=>{
-      const o = parseFloat(odds.value); if(!o) return;
-      pPct.value = (100/o).toFixed(2); calc();
-    });
-    $('#clearAll').addEventListener('click', ()=>{
-      [odds,pPct,bank].forEach(el=>el.value='');
-      frac.value = 0.5; updateFracLabel(); calc();
-    });
-
-    // demos
+    [odds,pPct,bank].forEach(el=>el.addEventListener('input', calc));
+    $('#setFair').addEventListener('click', ()=>{ const o=parseFloat(odds.value); if(!o) return; pPct.value=(100/o).toFixed(2); calc(); });
+    $('#clearAll').addEventListener('click', ()=>{ [odds,pPct,bank].forEach(el=>el.value=''); frac.value=0.5; updateFracLabel(); calc(); });
     $('#demo1').addEventListener('click', ()=>{ odds.value=2.40; pPct.value=45; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
     $('#demo2').addEventListener('click', ()=>{ odds.value=1.80; pPct.value=60; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
 
-    // ----- EV COMPARE -----
+    // COMPARE
     function calcCompare(){
-      const pa = parseFloat($('#c-pa').value)/100;
-      const pb = parseFloat($('#c-pb').value)/100;
-      const oa = parseFloat($('#c-oa').value), ob = parseFloat($('#c-ob').value);
-      if(![pa,pb,oa,ob].every(x=>Number.isFinite(x) && x>0)){ ['c-eva','c-evb','c-best'].forEach(id=>$('#'+id).textContent='—'); return; }
-      const eva = pa*oa - 1, evb = pb*ob - 1;
-      $('#c-eva').textContent = fmt(eva,3);
-      $('#c-evb').textContent = fmt(evb,3);
+      const pa=parseFloat($('#c-pa').value)/100, pb=parseFloat($('#c-pb').value)/100;
+      const oa=parseFloat($('#c-oa').value), ob=parseFloat($('#c-ob').value);
+      if(![pa,pb,oa,ob].every(x=>Number.isFinite(x)&&x>0)){ ['c-eva','c-evb','c-best'].forEach(id=>$('#'+id).textContent='—'); return; }
+      const eva=pa*oa-1, evb=pb*ob-1;
+      $('#c-eva').textContent=fmt(eva,3);
+      $('#c-evb').textContent=fmt(evb,3);
       $('#c-best').textContent = eva===evb?'Equal':(eva>evb?'Side A':'Side B');
     }
     $('#c-calc').addEventListener('click', calcCompare);
     ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).addEventListener('input', calcCompare));
     $('#c-clear').addEventListener('click', ()=>{ ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).value=''); calcCompare(); });
 
-    // ----- HISTORY (localStorage) -----
-    function loadHist(){ return JSON.parse(localStorage.getItem('evk:hist')||'[]'); }
-    function saveHist(arr){ localStorage.setItem('evk:hist', JSON.stringify(arr)); }
+    // HISTORY
+    const loadHist=()=>JSON.parse(localStorage.getItem('evk:hist')||'[]');
+    const saveHist=a=>localStorage.setItem('evk:hist', JSON.stringify(a));
     function renderHist(){
-      const list = loadHist();
-      const wrap = $('#hist'); wrap.innerHTML='';
+      const list=loadHist(), wrap=$('#hist'); wrap.innerHTML='';
       if(!list.length){ show($('#histEmpty')); return; } else hide($('#histEmpty'));
-      list.slice().reverse().forEach(item=>{
-        const div = document.createElement('div');
-        div.className='border border-zinc-800 rounded-md p-2 text-sm flex flex-wrap items-center justify-between gap-2';
-        div.innerHTML = `<div>${item.ts}</div>
-                         <div>Odds ${item.odds} | p ${item.pPct}% | Bank $${item.bank}</div>
-                         <div>Frac ${item.frac} | Stake $${item.stake}</div>`;
-        wrap.appendChild(div);
+      list.slice().reverse().forEach(r=>{
+        const row=document.createElement('div');
+        row.className='border border-zinc-800 rounded-lg p-2 text-sm flex flex-wrap items-center justify-between gap-2';
+        row.innerHTML=`<div class="text-zinc-400">${r.ts}</div>
+                       <div>Odds <b>${r.odds}</b> • p <b>${r.pPct}%</b> • Bank <b>$${r.bank}</b></div>
+                       <div>Frac <b>${r.frac}</b> • Stake <b>$${r.stake}</b></div>`;
+        wrap.appendChild(row);
       });
     }
     renderHist();
-
     $('#saveBet').addEventListener('click', ()=>{
-      const o=parseFloat(odds.value), p=parseFloat(pPct.value), b=parseFloat(bank.value); 
+      const o=parseFloat(odds.value), p=parseFloat(pPct.value), b=parseFloat(bank.value);
       if(!o||!p||!b){ alert('Enter odds, win %, and bank first.'); return; }
       const f=parseFloat(frac.value)||0;
-      // recompute to capture stake
       const B=o-1, q=1-p/100, k=Math.max(0, Math.min(1, ((B*(p/100)-q)/B)||0 ));
       const stake=(b*k*f);
-      const now=new Date(); const ts=now.toLocaleString();
-      const list=loadHist(); list.push({ts,odds:o, pPct:p, bank:b, frac:f.toFixed(2)+'x', stake:stake.toFixed(2)});
+      const ts=new Date().toLocaleString();
+      const list=loadHist(); list.push({ts,odds:o,pPct:p,bank:b,frac:f.toFixed(2)+'x',stake:stake.toFixed(2)});
       saveHist(list); renderHist(); go('history');
     });
-
     $('#clearHist').addEventListener('click', ()=>{ if(confirm('Clear all saved bets?')){ saveHist([]); renderHist(); } });
     $('#exportCSV').addEventListener('click', ()=>{
       const list=loadHist(); if(!list.length){ alert('No rows.'); return; }
@@ -311,7 +310,7 @@
       const a=document.createElement('a'); a.href=url; a.download='ev_kelly_history.csv'; a.click(); URL.revokeObjectURL(url);
     });
 
-    // initial calc
+    // Initial calc
     calc();
   </script>
 </body>
