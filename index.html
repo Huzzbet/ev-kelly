@@ -40,6 +40,196 @@
     @media (max-width:420px){ .row, .out{grid-template-columns:1fr} }
   </style>
 </head>
+// -------- Menu wiring --------
+const menuBtn = document.getElementById('menuBtn');
+const sideMenu = document.getElementById('sideMenu');
+const closeMenu = document.getElementById('closeMenu');
+
+menuBtn?.addEventListener('click', () => sideMenu.classList.add('open'));
+closeMenu?.addEventListener('click', () => sideMenu.classList.remove('open'));
+document.querySelectorAll('#sideMenu .menu-item').forEach(btn => {
+  btn.addEventListener('click', () => {
+    openTab(btn.dataset.tab);
+    sideMenu.classList.remove('open');
+  });
+});
+
+function openTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.hidden = true);
+  const el = document.getElementById(`tab-${name}`);
+  if (el) el.hidden = false;
+  if (name === 'nbl') initNBL();
+}
+
+// --------- NBL Module ---------
+let NBL_STATE = {
+  games: [],
+  teams: {}, // aggregated stats
+  season: '2024-25',
+  dataUrl: 'data/nbl_2024.json', // <-- update this path in your repo
+};
+
+// Utility: winner, totals, fair odds, EV, Kelly
+function winnerRow(g) {
+  if (g.home_score > g.away_score) return g.home;
+  if (g.away_score > g.home_score) return g.away;
+  return 'Draw';
+}
+function totalPoints(g) { return (g.home_score ?? 0) + (g.away_score ?? 0); }
+function fairOdds(p) { return p > 0 ? (1 / p) : Infinity; }
+function evPerDollar(pWin, decOdds) {
+  const b = decOdds - 1; const q = 1 - pWin;
+  return pWin * b - q;
+}
+function kellyFractionFull(pWin, decOdds) {
+  const b = decOdds - 1; const q = 1 - pWin;
+  const k = (b * pWin - q) / b;
+  return Math.max(0, k); // clamp negative to 0
+}
+
+// Aggregate team stats (simple v1: season win%, home/away win%, PPG/OPPG)
+function computeTeams(games) {
+  const teams = {};
+  const touch = t => teams[t] ??= { team: t, gp:0, w:0, l:0, ppg:0, oppg:0, home:{gp:0,w:0}, away:{gp:0,w:0}, last5:[] };
+  games.forEach(g => {
+    const h = touch(g.home), a = touch(g.away);
+    h.gp++; a.gp++;
+    h.ppg += g.home_score; h.oppg += g.away_score;
+    a.ppg += g.away_score; a.oppg += g.home_score;
+    h.home.gp++; a.away.gp++;
+    const w = winnerRow(g);
+    if (w === g.home){ h.w++; a.l++; h.home.w++; }
+    else if (w === g.away){ a.w++; h.l++; }
+    // naive last5: push 1 (win) or 0 (loss)
+    h.last5.push(w===g.home?1:0); a.last5.push(w===g.away?1:0);
+    if (h.last5.length>5) h.last5.shift(); if (a.last5.length>5) a.last5.shift();
+  });
+  for (const t of Object.values(teams)) {
+    t.winPct = t.gp ? t.w / t.gp : 0;
+    t.ppg = t.gp ? t.ppg / t.gp : 0;
+    t.oppg = t.gp ? t.oppg / t.gp : 0;
+    t.home.winPct = t.home.gp ? t.home.w / t.home.gp : 0;
+    t.last5Pct = t.last5.length ? t.last5.reduce((a,b)=>a+b,0)/t.last5.length : 0;
+  }
+  return teams;
+}
+
+// Simple v1 matchup model: base on season win% with mild home edge
+function modelHomeWinProb(homeTeam, awayTeam) {
+  const h = NBL_STATE.teams[homeTeam], a = NBL_STATE.teams[awayTeam];
+  if (!h || !a) return 0.5;
+  // Elo-like blend without ratings: season win% + last5 momentum + home bump
+  const base = (h.winPct - a.winPct) * 0.4 + (h.last5Pct - a.last5Pct) * 0.2 + (h.home.winPct - a.winPct) * 0.2;
+  let p = 0.5 + base;           // centered at 50/50
+  p += 0.04;                    // +4% home-court bump
+  return Math.min(0.85, Math.max(0.15, p)); // clamp for sanity
+}
+
+async function initNBL() {
+  // load once
+  if (!NBL_STATE.games.length) {
+    try {
+      const res = await fetch(NBL_STATE.dataUrl, { cache: 'no-store' });
+      if (!res.ok) throw new Error('Failed to fetch NBL data');
+      NBL_STATE.games = await res.json();
+    } catch (e) {
+      // Fallback: small embedded sample so the tab always works
+      console.warn(e);
+      NBL_STATE.games = [
+        {"date":"2025-01-10","season":"2024-25","round":12,"home":"Melbourne United","away":"Sydney Kings","home_score":92,"away_score":86,"venue":"John Cain Arena"}
+      ];
+    }
+    // compute aggregates
+    NBL_STATE.teams = computeTeams(NBL_STATE.games);
+  }
+  renderNBL();
+}
+
+function renderNBL() {
+  // Table
+  const tb = document.querySelector('#nblTable tbody');
+  tb.innerHTML = '';
+  NBL_STATE.games
+    .filter(g => g.season === NBL_STATE.season)
+    .sort((a,b) => a.date.localeCompare(b.date))
+    .forEach(g => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${g.date}</td>
+        <td>${g.round ?? ''}</td>
+        <td>${g.home}</td>
+        <td>${g.away}</td>
+        <td>${g.home_score}–${g.away_score}</td>
+        <td>${winnerRow(g)}</td>
+        <td>${totalPoints(g)}</td>
+      `;
+      // Click row => mini matchup card vs market
+      tr.addEventListener('click', () => showMatchupCard(g));
+      tb.appendChild(tr);
+    });
+
+  // Team summary card
+  const teamsSorted = Object.values(NBL_STATE.teams).sort((a,b) => b.winPct - a.winPct);
+  const top = teamsSorted.slice(0,8).map(t => 
+    `<li>${t.team}: ${(t.winPct*100).toFixed(1)}% W • PPG ${t.ppg.toFixed(1)} • OPPG ${t.oppg.toFixed(1)}</li>`
+  ).join('');
+  document.getElementById('nblSummary').innerHTML = `
+    <strong>Season ${NBL_STATE.season}</strong>
+    <ul>${top}</ul>
+  `;
+
+  document.getElementById('nblTeamStats').innerHTML = `
+    <details>
+      <summary>All team stats</summary>
+      ${teamsSorted.map(t => `
+        <div style="margin:.25rem 0">
+          <strong>${t.team}</strong> — GP ${t.gp}, W ${t.w}, L ${t.l},
+          Win% ${(t.winPct*100).toFixed(1)}%, Home ${(t.home.winPct*100).toFixed(1)}%,
+          Last5 ${(t.last5Pct*100).toFixed(0)}%, PPG ${t.ppg.toFixed(1)}, OPPG ${t.oppg.toFixed(1)}
+        </div>
+      `).join('')}
+    </details>
+  `;
+
+  // Recalc button uses currently selected row (or none)
+  document.getElementById('nblRecalc').onclick = () => {
+    const odds = parseFloat(document.getElementById('nblMarketOdds').value);
+    if (!isFinite(odds) || odds <= 1) return;
+    // If a last-clicked matchup exists, recompute EV
+    if (window.__lastMatch) showMatchupCard(window.__lastMatch);
+  };
+}
+
+function badge(ev) {
+  if (ev < 0) return `<span class="badge badge-neg">−EV</span>`;
+  if (ev < 0.02) return `<span class="badge badge-mid">~EV</span>`;
+  return `<span class="badge badge-pos">+EV</span>`;
+}
+
+function showMatchupCard(g) {
+  window.__lastMatch = g;
+  const pHome = modelHomeWinProb(g.home, g.away);
+  const fair = fairOdds(pHome);
+  const market = parseFloat(document.getElementById('nblMarketOdds').value || '0');
+  const ev = market > 1 ? evPerDollar(pHome, market) : 0;
+  const kelly = market > 1 ? kellyFractionFull(pHome, market) : 0;
+
+  const html = `
+    <div class="card">
+      <div><strong>${g.home}</strong> vs <strong>${g.away}</strong> — ${g.date} (R${g.round ?? ''})</div>
+      <div>Model home win prob: <strong>${(pHome*100).toFixed(1)}%</strong>
+        • Fair odds: <strong>${fair.toFixed(2)}</strong></div>
+      <div>Market (home): <strong>${isFinite(market)&&market>1 ? market.toFixed(2) : '—'}</strong>
+        • EV/$: <strong>${ev.toFixed(3)}</strong> ${badge(ev)}
+        • Full-Kelly: <strong>${(kelly*100).toFixed(2)}%</strong></div>
+      <small>Note: v1 model = season/last-5 blend + 4% home edge; clamp 15–85%.</small>
+    </div>
+  `;
+  document.getElementById('nblSummary').innerHTML = html;
+}
+
+// Optional: autoload NBL tab on first open
+// openTab('nbl');
 <body>
   <header>
     <h1><span class="logo">K</span>EV & Kelly App</h1>
