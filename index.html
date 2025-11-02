@@ -298,3 +298,27 @@
   <h3>Settings</h3>
   <label><input id="settingDecimalOdds" type="checkbox" checked> Use decimal odds</label>
 </section>
+
+<style>
+/* --- MENU + NBL TAB CSS --- */
+
+/* Corner menu button */
+#menuBtn {
+  position: fixed; top: 12px; right: 12px;
+  font-size: 20px; padding: 8px 10px;
+  border-radius: 8px; border: 1px solid var(--border, #333);
+  background: var(--panel, #111); color: var(--text, #eee);
+  z-index: 1000;
+}
+
+/* Slide-in side menu */
+#sideMenu {
+  position: fixed; top: 0; right: -320px; width: 320px; height: 100%;
+  background: var(--panel, #0e0e0e); color: var(--text, #eee);
+  border-left: 1px solid var(--border, #222);
+  transition: right 180ms ease; z-index: 1001; padding: 12px;
+}
+#sideMenu.open { right: 0; }
+#sideMenu header { display: flex; align-items: center; justify-content: space-between; }
+/* ... and paste the ENTIRE section 3 CSS here ... */
+</style>
