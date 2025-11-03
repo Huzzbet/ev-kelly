@@ -1,176 +1,208 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NBL EV & Kelly</title>
-
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>EV & Kelly App — NBL Probabilities (beta)</title>
 <style>
-body {
-  background:#000;
-  color:#ddd;
-  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  margin:0; padding:18px;
-}
-
-/* Hide Bet History */
-#bet-history { display:none !important; }
-
-/* Label styling */
-label { display:block; color:#aaa; margin:10px 0 6px; font-size:14px; }
-
-/* Hide native select (still accessible & triggers change events) */
-.team-native {
-  position:absolute; opacity:0; pointer-events:none; height:0; width:0;
-}
-
-/* Dropdown wrapper */
-.team-wrap { position:relative; margin-bottom:18px; }
-
-/* Button */
-.team-btn {
-  width:100%;
-  display:flex; align-items:center; justify-content:space-between;
-  background:#1b1b1b; color:#eee;
-  border:1px solid #333; border-radius:10px;
-  padding:10px 12px; font-size:16px;
-}
-.team-btn:focus { outline:2px solid #5a9; }
-
-/* Value shown */
-.team-btn .val { display:flex; align-items:center; gap:10px; min-height:28px; }
-.team-btn img { width:22px; height:22px; object-fit:contain; border-radius:4px; background:#111; display:none; }
-.team-btn.has-logo img { display:inline-block; }
-
-.caret { opacity:.7; }
-
-/* Menu */
-.team-menu {
-  position:absolute; left:0; right:0; top:calc(100% + 6px);
-  z-index:99;
-  background:#111; border:1px solid #222; border-radius:8px;
-  max-height:320px; overflow:auto; padding:6px; display:none;
-}
-.team-menu.open { display:block; }
-
-/* Menu item */
-.team-opt {
-  display:flex; align-items:center; gap:10px;
-  padding:8px; border-radius:6px;
-  cursor:pointer; color:#eaeaea;
-}
-.team-opt:hover, .team-opt[aria-selected="true"] { background:#242424; }
-.team-opt img { width:22px; height:22px; object-fit:contain; border-radius:4px; background:#111; }
-
-/* Slider placeholder spacing */
-.slider-box { margin:20px 0; }
+  :root{
+    --bg:#0f0f10; --panel:#161718; --muted:#a9adb3; --text:#e7e9ed;
+    --border:#2a2c30; --accent:#7fd1b9;
+  }
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{max-width:820px;margin:0 auto;padding:18px;}
+  header .badge{display:inline-flex;align-items:center;gap:10px}
+  header h1{margin:0 0 4px;font-size:20px;font-weight:700}
+  header p{margin:0;color:var(--muted);font-size:13px}
+  .card{border-top:1px solid var(--border);padding:16px 0}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .row .right a{color:var(--muted);text-decoration:none;margin-left:16px}
+  .row .right a:hover{color:#fff}
+  .field-group{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:8px}
+  label{display:block;color:var(--muted);font-size:13px;margin-bottom:6px}
+  select,button,input[type="range"]{
+    -webkit-appearance:none;appearance:none;
+    width:100%;background:var(--panel);color:var(--text);
+    border:1px solid var(--border);border-radius:12px;padding:12px;font-size:16px;
+  }
+  .slider-wrap{margin:18px 0 8px}
+  .slider-row{display:flex;align-items:center;justify-content:space-between;color:var(--muted);font-size:13px}
+  input[type="range"]{height:4px;border-radius:999px;padding:0}
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:22px;height:22px;border-radius:50%;
+    background:#fff;border:2px solid var(--accent);
+    box-shadow:0 0 0 3px rgba(127,209,185,.2);
+  }
+  .actions{display:flex;align-items:center;gap:12px;margin:16px 0 8px}
+  .btn{
+    background:var(--panel);border:1px solid var(--border);border-radius:10px;
+    padding:10px 14px;color:#fff;font-weight:600;cursor:pointer
+  }
+  .btn:hover{border-color:#3a3d44}
+  .inline-link{color:#cfd3da;text-decoration:none}
+  .inline-link:hover{text-decoration:underline}
+  .metric{margin-top:10px}
+  .metric h4{margin:0 0 8px;font-size:14px;color:#cfd3da}
+  .metric .value{
+    width:52px;height:12px;border-radius:6px;background:linear-gradient(90deg,#37393d,#1e2023);
+    display:inline-block
+  }
+  .method{color:var(--muted);font-size:12.5px;line-height:1.5;margin-top:14px}
+  /* bottom nav */
+  .tabs{
+    position:fixed;left:0;right:0;bottom:0;background:var(--panel);
+    border-top:1px solid var(--border);display:flex;gap:10px;justify-content:space-around;
+    padding:12px 10px;z-index:50
+  }
+  .tabs a{color:#e6e8ec;text-decoration:none;font-weight:600}
+  .tabs a.active{color:#fff}
+  /* spacing for fixed tabs */
+  .spacer{height:72px}
 </style>
 </head>
-
 <body>
-<h2>NBL Probability Model</h2>
+<div class="wrap">
 
-<!-- Home -->
-<label for="homeTeam">Home</label>
-<select id="homeTeam" class="team-native">
-  <option value="">Select team…</option>
-  <option value="MEL" data-logo="https://yourcdn/nbl/melbourne-united.png">Melbourne United</option>
-  <option value="SYD" data-logo="https://yourcdn/nbl/sydney-kings.png">Sydney Kings</option>
-  <option value="PER" data-logo="https://yourcdn/nbl/perth-wildcats.png">Perth Wildcats</option>
-  <option value="ADL" data-logo="https://yourcdn/nbl/adelaide-36ers.png">Adelaide 36ers</option>
-  <option value="BRI" data-logo="https://yourcdn/nbl/brisbane-bullets.png">Brisbane Bullets</option>
-  <option value="NZB" data-logo="https://yourcdn/nbl/nz-breakers.png">NZ Breakers</option>
-  <option value="ILL" data-logo="https://yourcdn/nbl/illawarra-hawks.png">Illawarra Hawks</option>
-  <option value="TAI" data-logo="https://yourcdn/nbl/tasmania-jackjumpers.png">Tasmania JackJumpers</option>
-  <option value="SEM" data-logo="https://yourcdn/nbl/se-melbourne-phoenix.png">SE Melbourne Phoenix</option>
-</select>
+  <!-- Header -->
+  <header class="card" style="border-top:none">
+    <div class="badge">
+      <div style="width:26px;height:26px;border-radius:6px;background:#3a6df0;display:grid;place-items:center;font-weight:800">K</div>
+      <div>
+        <h1>EV & Kelly App</h1>
+        <p>Fast stake sizing with edge, EV, and fractional Kelly — with NBL probabilities.</p>
+      </div>
+    </div>
+  </header>
 
-<!-- Away -->
-<label for="awayTeam">Away</label>
-<select id="awayTeam" class="team-native">
-  <option value="">Select team…</option>
-  <option value="MEL" data-logo="https://yourcdn/nbl/melbourne-united.png">Melbourne United</option>
-  <option value="SYD" data-logo="https://yourcdn/nbl/sydney-kings.png">Sydney Kings</option>
-  <option value="PER" data-logo="https://yourcdn/nbl/perth-wildcats.png">Perth Wildcats</option>
-  <option value="ADL" data-logo="https://yourcdn/nbl/adelaide-36ers.png">Adelaide 36ers</option>
-  <option value="BRI" data-logo="https://yourcdn/nbl/brisbane-bullets.png">Brisbane Bullets</option>
-  <option value="NZB" data-logo="https://yourcdn/nbl/nz-breakers.png">NZ Breakers</option>
-  <option value="ILL" data-logo="https://yourcdn/nbl/illawarra-hawks.png">Illawarra Hawks</option>
-  <option value="TAI" data-logo="https://yourcdn/nbl/tasmania-jackjumpers.png">Tasmania JackJumpers</option>
-  <option value="SEM" data-logo="https://yourcdn/nbl/se-melbourne-phoenix.png">SE Melbourne Phoenix</option>
-</select>
+  <!-- Bet history -->
+  <section class="card" id="bet-history">
+    <div class="row">
+      <h3 style="margin:0;font-size:16px">Bet history (local)</h3>
+      <div class="right">
+        <a href="#" id="exportCsv">Export CSV</a>
+        <a href="#" id="clearHistory">Clear</a>
+      </div>
+    </div>
+    <p style="color:var(--muted);margin:8px 0 0">No saved bets yet.</p>
+  </section>
 
-<!-- Placeholder for your slider & outputs -->
-<div class="slider-box">
-  <label>Recent form weight</label>
-  <input type="range" min="0" max="1" step="0.01" value="0.4">
+  <!-- NBL Probabilities -->
+  <section class="card">
+    <div class="row">
+      <h3 style="margin:0;font-size:16px">NBL Probabilities (beta)</h3>
+      <div class="right">
+        <a href="#" id="reload">Reload dataset</a>
+      </div>
+    </div>
+    <p style="color:var(--muted);margin:8px 0 14px">
+      Empirical implied win prob + totals baseline from your 2025 season data (R1–R7). Includes a <strong>recent form weight</strong>.
+    </p>
+
+    <!-- Home / Away -->
+    <div class="field-group">
+      <div>
+        <label for="homeTeam">Home</label>
+        <select id="homeTeam">
+          <option>Sydney Kings</option>
+          <option>Perth Wildcats</option>
+          <option>Melbourne United</option>
+          <option>Adelaide 36ers</option>
+          <option>Brisbane Bullets</option>
+          <option>NZ Breakers</option>
+          <option>Illawarra Hawks</option>
+          <option>Tasmania JackJumpers</option>
+          <option>SE Melbourne Phoenix</option>
+        </select>
+      </div>
+      <div>
+        <label for="awayTeam">Away</label>
+        <select id="awayTeam">
+          <option>Perth Wildcats</option>
+          <option>Sydney Kings</option>
+          <option>Melbourne United</option>
+          <option>Adelaide 36ers</option>
+          <option>Brisbane Bullets</option>
+          <option>NZ Breakers</option>
+          <option>Illawarra Hawks</option>
+          <option>Tasmania JackJumpers</option>
+          <option>SE Melbourne Phoenix</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Slider -->
+    <div class="slider-wrap">
+      <div class="slider-row">
+        <div>Recent form weight (last 5 games)</div>
+        <div id="wVal">0.40</div>
+      </div>
+      <input type="range" id="recentWeight" min="0" max="1" step="0.01" value="0.40" />
+      <div style="color:var(--muted);font-size:12px;margin-top:8px">
+        0 = ignore recent; 1 = only last 5. We blend recent vs season for win% and totals.
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions">
+      <button class="btn" id="calcBtn">Calculate implied</button>
+      <a class="inline-link" href="#" id="swapBtn">Swap</a>
+    </div>
+
+    <!-- Metrics -->
+    <div class="metric">
+      <h4>Home win probability (empirical)</h4>
+      <div class="value" id="homeProbBar" title="—"></div>
+    </div>
+
+    <div class="metric" style="margin-top:14px">
+      <h4>Totals baseline (mean)</h4>
+      <div class="value" id="totalsMeanBar" title="—"></div>
+    </div>
+
+    <!-- Method -->
+    <p class="method">
+      Method: 50% base strength, 30% home/away split, 20% H2H. Each term blends season and last-5 using the weight above.
+      Totals baseline = blend of teams’ mean totals with a small league-mean pull.
+    </p>
+  </section>
+
+  <div class="spacer"></div>
 </div>
 
-<div id="result">Select teams to calculate...</div>
+<!-- Bottom tabs -->
+<nav class="tabs">
+  <a href="#" class="active">Calculator</a>
+  <a href="#">EV Compare</a>
+  <a href="#">NBL</a>
+  <a href="#">History</a>
+</nav>
 
 <script>
-(function enhanceTeamSelects() {
-  function enhance(select) {
-    const wrap = document.createElement('div');
-    wrap.className = 'team-wrap';
-    select.parentNode.insertBefore(wrap, select);
-    wrap.appendChild(select);
+  // slider readout
+  const slider = document.getElementById('recentWeight');
+  const wVal = document.getElementById('wVal');
+  slider.addEventListener('input', ()=> wVal.textContent = Number(slider.value).toFixed(2));
 
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'team-btn';
-    btn.innerHTML = `<span class="val"><img alt=""><span class="name">Select team…</span></span><span class="caret">▾</span>`;
-    wrap.appendChild(btn);
+  // swap
+  document.getElementById('swapBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    const h = document.getElementById('homeTeam');
+    const a = document.getElementById('awayTeam');
+    const hv = h.value, ha = h.selectedIndex, av = a.value, aa = a.selectedIndex;
+    h.value = av; a.value = hv;
+    // if values are the same labels, force index swap to show change
+    h.selectedIndex = aa; a.selectedIndex = ha;
+  });
 
-    const menu = document.createElement('div');
-    menu.className = 'team-menu';
-    wrap.appendChild(menu);
-
-    [...select.options].forEach(opt => {
-      if (!opt.value) return;
-      const div = document.createElement('div');
-      div.className = 'team-opt';
-      div.dataset.value = opt.value;
-
-      const logo = opt.getAttribute('data-logo') || '';
-      div.innerHTML = `<img src="${logo}"><span>${opt.text}</span>`;
-      div.onclick = () => {
-        select.value = opt.value;
-        sync();
-        menu.classList.remove('open');
-        select.dispatchEvent(new Event('change', { bubbles:true }));
-      };
-      menu.appendChild(div);
-    });
-
-    btn.onclick = () => menu.classList.toggle('open');
-    document.addEventListener('click', e => { if (!wrap.contains(e.target)) menu.classList.remove('open'); });
-
-    function sync() {
-      const opt = select.selectedOptions[0];
-      const img = btn.querySelector('img');
-      const name = btn.querySelector('.name');
-
-      if (!opt || !opt.value) {
-        name.textContent = "Select team…";
-        img.src = "";
-        btn.classList.remove("has-logo");
-        return;
-      }
-      name.textContent = opt.text;
-      const logo = opt.getAttribute('data-logo');
-      if (logo) {
-        img.src = logo;
-        btn.classList.add("has-logo");
-      }
-      [...menu.children].forEach(el => el.setAttribute('aria-selected', el.dataset.value === opt.value));
-    }
-    select.addEventListener("change", sync);
-    sync();
-  }
-  document.querySelectorAll("select.team-native").forEach(enhance);
-})();
+  // placeholders for actions you may wire later
+  document.getElementById('calcBtn').addEventListener('click', ()=>{
+    // TODO: hook to your model; temp visual:
+    document.getElementById('homeProbBar').style.width = '52px';
+    document.getElementById('totalsMeanBar').style.width = '52px';
+  });
+  document.getElementById('reload').addEventListener('click', e=>{ e.preventDefault(); alert('Reloading dataset…'); });
+  document.getElementById('exportCsv').addEventListener('click', e=>{ e.preventDefault(); alert('Export CSV (todo)'); });
+  document.getElementById('clearHistory').addEventListener('click', e=>{ e.preventDefault(); alert('Clearing history (todo)'); });
 </script>
-
 </body>
 </html>
