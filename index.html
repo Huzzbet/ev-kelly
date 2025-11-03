@@ -1,7 +1,46 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
+<!-- === SharpEdge header + logo-dropdown styles === -->
+<style>
+  :root { color-scheme: dark; }
+  /* Header */
+  .app-header{ text-align:center; padding:24px 12px 14px;}
+  .app-header h1{ margin:0 0 6px; font-size:28px; font-weight:800; letter-spacing:.5px;}
+  .app-header .tagline{ margin:0; font-size:14px; opacity:.75;}
+
+  /* Custom Team Select */
+  .team-select{ position:relative; margin-top:8px;}
+  .team-select-btn{
+    display:flex; align-items:center; gap:10px; width:100%;
+    padding:12px 14px; border-radius:10px; cursor:pointer;
+    border:1px solid rgba(255,255,255,.15); background:rgba(255,255,255,.04);
+  }
+  .team-select-btn:hover{ background:rgba(255,255,255,.06);}
+  .team-select-btn img{ width:26px; height:26px; object-fit:contain; border-radius:4px; background:#111;}
+  .team-select-btn .team-name{ flex:1; text-align:left; font-size:15px;}
+  .team-select-btn .chev{ font-size:16px; opacity:.6; transform:translateY(1px);}
+
+  .team-menu{
+    position:absolute; z-index:40; left:0; right:0; top:calc(100% + 8px);
+    background:#0f0f10; border:1px solid rgba(255,255,255,.15); border-radius:12px;
+    box-shadow:0 10px 40px rgba(0,0,0,.45); max-height:340px; overflow:auto; display:none;
+  }
+  .team-select.open .team-menu{ display:block; }
+  .team-search{ padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.08);}
+  .team-search input{
+    width:100%; padding:10px 12px; border-radius:8px; color:inherit;
+    background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1);
+  }
+  .team-item{ display:flex; align-items:center; gap:10px; padding:10px 12px; cursor:pointer;}
+  .team-item img{ width:24px; height:24px; object-fit:contain; border-radius:4px; background:#111;}
+  .team-item:hover{ background:rgba(255,255,255,.06);}
+  .team-item[aria-selected="true"]{ background:rgba(0,150,255,.18);}
+
+  /* Hide native selects only after JS mounts (so forms still submit on no-JS) */
+  .native-team.enhanced-hidden{ display:none !important; }
+</style>
+  <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
 <title>EV & Kelly App</title>
 <style>
@@ -55,7 +94,11 @@
 </style>
 </head>
 <body>
-
+<!-- === SharpEdge page header === -->
+<header class="app-header">
+  <h1>SharpEdge Predictor</h1>
+  <p class="tagline">Find the edge. Bet smarter. Win long-term.</p>
+</header>
 <main class="tab-views">
 
   <!-- ============== CALCULATOR ============== -->
@@ -617,4 +660,112 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 </body>
+  <!-- === Logo dropdown enhancer (keeps your existing selects) === -->
+<script>
+  // --- Team data (update logo paths if different) ---
+  const NBL_TEAMS = [
+    { key:"adelaide-36ers", name:"Adelaide 36ers", logo:"/img/logos/nbl/adelaide-36ers.png" },
+    { key:"brisbane-bullets", name:"Brisbane Bullets", logo:"/img/logos/nbl/brisbane-bullets.png" },
+    { key:"cairns-taipans", name:"Cairns Taipans", logo:"/img/logos/nbl/cairns-taipans.png" },
+    { key:"illawarra-hawks", name:"Illawarra Hawks", logo:"/img/logos/nbl/illawarra-hawks.png" },
+    { key:"melbourne-united", name:"Melbourne United", logo:"/img/logos/nbl/melbourne-united.png" },
+    { key:"new-zealand-breakers", name:"NZ Breakers", logo:"/img/logos/nbl/new-zealand-breakers.png" },
+    { key:"perth-wildcats", name:"Perth Wildcats", logo:"/img/logos/nbl/perth-wildcats.png" },
+    { key:"sem-phoenix", name:"South East Melbourne Phoenix", logo:"/img/logos/nbl/sem-phoenix.png" },
+    { key:"sydney-kings", name:"Sydney Kings", logo:"/img/logos/nbl/sydney-kings.png" },
+    { key:"tasmania-jackjumpers", name:"Tasmania JackJumpers", logo:"/img/logos/nbl/tasmania-jackjumpers.png" }
+  ];
+
+  // Try to find your existing native selects safely
+  function findTeamSelects() {
+    // Common IDs first
+    let home = document.getElementById("homeTeam") || document.getElementById("home");
+    let away = document.getElementById("awayTeam") || document.getElementById("away");
+
+    // Fallback: first two <select> elements with 8+ NBL options
+    if (!home || !away) {
+      const selects = Array.from(document.querySelectorAll("select")).filter(sel => {
+        const opts = Array.from(sel.options).map(o => o.textContent.trim());
+        const hits = ["Sydney Kings","Perth Wildcats","NZ Breakers","Adelaide 36ers","Brisbane Bullets","Cairns Taipans","Illawarra Hawks","Melbourne United","South East Melbourne Phoenix","Tasmania JackJumpers"]
+          .filter(n => opts.includes(n)).length;
+        return hits >= 6;
+      });
+      if (!home && selects[0]) home = selects[0];
+      if (!away && selects[1]) away = selects[1];
+    }
+    return { home, away };
+  }
+
+  function buildDropdown(nativeSelect) {
+    nativeSelect.classList.add("native-team"); // mark it
+    const mount = document.createElement("div");
+    mount.className = "team-select";
+    nativeSelect.insertAdjacentElement("afterend", mount);
+
+    mount.innerHTML = `
+      <button type="button" class="team-select-btn">
+        <img alt="" />
+        <span class="team-name">Select a team…</span>
+        <span class="chev">▾</span>
+      </button>
+      <div class="team-menu" role="listbox" aria-expanded="false">
+        <div class="team-search"><input type="text" placeholder="Search team…"></div>
+        <div class="team-list"></div>
+      </div>
+    `;
+
+    const btn = mount.querySelector(".team-select-btn");
+    const nameEl = mount.querySelector(".team-name");
+    const imgEl = mount.querySelector("img");
+    const menu = mount.querySelector(".team-menu");
+    const listEl = mount.querySelector(".team-list");
+    const searchEl = mount.querySelector(".team-search input");
+
+    function render(filter = "") {
+      const q = filter.trim().toLowerCase();
+      listEl.innerHTML = "";
+      NBL_TEAMS.filter(t => !q || t.name.toLowerCase().includes(q)).forEach(t => {
+        const sel = nativeSelect.value === t.name;
+        const row = document.createElement("div");
+        row.className = "team-item";
+        if (sel) row.setAttribute("aria-selected","true");
+        row.innerHTML = `<img alt="" src="${t.logo}"><span>${t.name}</span>`;
+        row.addEventListener("click", () => { choose(t.name); close(); });
+        listEl.appendChild(row);
+      });
+    }
+    function setBtn(name) {
+      const t = NBL_TEAMS.find(x => x.name === name);
+      if (t) { nameEl.textContent = t.name; imgEl.src = t.logo; }
+      else { nameEl.textContent = "Select a team…"; imgEl.removeAttribute("src"); }
+    }
+    function choose(name) {
+      // keep native select in sync for your existing calculator
+      const opt = Array.from(nativeSelect.options).find(o => o.value === name);
+      if (opt) nativeSelect.value = name;
+      else { const o = document.createElement("option"); o.value = name; o.textContent = name; nativeSelect.appendChild(o); nativeSelect.value = name; }
+      nativeSelect.dispatchEvent(new Event("change", { bubbles:true }));
+      setBtn(name);
+    }
+    function open(){ mount.classList.add("open"); menu.setAttribute("aria-expanded","true"); render(searchEl.value); setTimeout(()=>searchEl.focus(),0); document.addEventListener("click", outsideOnce, { once:true });}
+    function close(){ mount.classList.remove("open"); menu.setAttribute("aria-expanded","false");}
+    function outsideOnce(e){ if(!mount.contains(e.target)) close(); else document.addEventListener("click", outsideOnce, { once:true });}
+
+    btn.addEventListener("click", () => mount.classList.contains("open") ? close() : open());
+    searchEl.addEventListener("input", () => render(searchEl.value));
+    nativeSelect.addEventListener("change", () => setBtn(nativeSelect.value));
+
+    // Initial state
+    setBtn(nativeSelect.value);
+    nativeSelect.classList.add("enhanced-hidden");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const { home, away } = findTeamSelects();
+    if (home) buildDropdown(home);
+    if (away) buildDropdown(away);
+    // console hints if something wasn't found
+    if (!home || !away) console.warn("Logo dropdown: couldn't auto-find both team selects. Set IDs to homeTeam/awayTeam or update the finder.");
+  });
+</script>
 </html>
