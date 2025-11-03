@@ -49,17 +49,21 @@
       </div>
     </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Home last-5 (W/L, e.g. <span class="muted">WWLLW</span>)</label>
-        <input id="homeLast5" placeholder="WWLLW" />
-        <div id="homeFormViz" class="small"></div>
-      </div>
-      <div class="col">
-        <label>Away last-5 (W/L)</label>
-        <input id="awayLast5" placeholder="LWLWW" />
-        <div id="awayFormViz" class="small"></div>
-      </div>
+    <div class="col">
+  <label>Home last-5 (W/L)</label>
+
+  <div class="form-box">
+    <div id="homeFormVisual" class="form-chips"></div>
+    <input id="homeLast5" maxlength="5" placeholder="WWLLW" class="form-input" />
+  </div>
+
+  <div class="form-buttons">
+    <button type="button" class="form-btn" onclick="addResult('homeLast5','W')">W</button>
+    <button type="button" class="form-btn" onclick="addResult('homeLast5','L')">L</button>
+  </div>
+
+  <div id="homeFormViz" class="small"></div>
+</div>
     </div>
 
     <div class="row">
