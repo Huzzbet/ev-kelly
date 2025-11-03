@@ -43,7 +43,7 @@
         <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center font-bold">K</div>
         <div>
           <h1 class="text-[18px] font-semibold leading-tight">EV &amp; Kelly App</h1>
-          <p class="text-[12px] text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly.</p>
+          <p class="text-[12px] text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly — with NBL probabilities.</p>
         </div>
       </div>
     </div>
@@ -82,6 +82,18 @@
             </div>
           </div>
         </div>
+
+        <!-- NEW: stake cap -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label class="block">
+            <div class="text-[12px] text-zinc-400 mb-1">Max stake cap (% of bank)</div>
+            <input id="capPct" type="number" min="0" max="100" step="0.1" class="field" value="3" />
+          </label>
+          <div class="flex items-center text-xs text-zinc-400">
+            Caps suggested bet to protect bankroll. E.g. 3% on $5,000 =&nbsp;$150 max.
+          </div>
+        </div>
+
         <div class="flex gap-3 pt-1">
           <button id="setFair" class="btn">Set prob to fair (1/odds)</button>
           <button id="clearAll" class="btn">Clear</button>
@@ -107,7 +119,7 @@
         <div class="card">
           <div class="text-sm text-zinc-400">Suggested bet (A$)</div>
           <div id="stakeOut" class="text-2xl font-semibold mt-1">—</div>
-          <p class="text-xs text-zinc-500 mt-1"><span id="fracNote">0.50x</span> of Kelly on your bank</p>
+          <p class="text-xs text-zinc-500 mt-1"><span id="fracNote">0.50x</span> of Kelly on your bank <span id="capNote" class="text-amber-400"></span></p>
         </div>
       </section>
 
@@ -167,13 +179,13 @@
         <div id="hist" class="mt-2 space-y-2"></div>
       </div>
 
-      <!-- NEW: NBL Probabilities (beta) -->
+      <!-- NBL Probabilities (beta) -->
       <div class="card space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="font-semibold">NBL Probabilities (beta)</h3>
           <button id="reloadNBL" class="btn">Reload dataset</button>
         </div>
-        <p class="text-sm text-zinc-400">Uses your 2025 season results (Rounds 1–7) to produce an empirical implied probability and a totals baseline.</p>
+        <p class="text-sm text-zinc-400">Empirical implied win prob + totals baseline from your 2025 season data (R1–R7). Includes a **recent form weight**.</p>
         <div class="grid grid-cols-2 gap-3">
           <label class="block">
             <div class="text-[12px] text-zinc-400 mb-1">Home</div>
@@ -184,6 +196,17 @@
             <select id="nblAway" class="field"></select>
           </label>
         </div>
+
+        <!-- NEW: recent form weight -->
+        <div class="grid grid-cols-1 gap-2">
+          <div class="flex items-center justify-between">
+            <div class="text-[12px] text-zinc-400">Recent form weight (last 5 games)</div>
+            <span id="recentLbl" class="chip">0.40</span>
+          </div>
+          <input id="recentW" type="range" min="0" max="1" step="0.05" value="0.40" />
+          <p class="text-[11px] text-zinc-500">0 = ignore recent; 1 = only last 5. We blend recent vs season for win% and totals.</p>
+        </div>
+
         <div class="flex flex-wrap gap-2">
           <button id="nblCalc" class="btn btn-primary">Calculate implied</button>
           <button id="nblSwap" class="btn">Swap</button>
@@ -200,7 +223,7 @@
             <p id="nblTotNote" class="text-xs text-zinc-500 mt-1"></p>
           </div>
         </div>
-        <p class="text-xs text-zinc-500">Method: weighted blend of team overall win%, home/away split, and current-season head-to-head (if any). Totals baseline = mean of both teams’ game totals with a small league-mean pull.</p>
+        <p class="text-xs text-zinc-500">Method: 50% base strength, 30% home/away split, 20% H2H. Each term blends season and last-5 using the weight above. Totals baseline = blend of teams’ mean totals with a small league-mean pull.</p>
       </div>
     </section>
 
@@ -239,29 +262,36 @@
     go(localStorage.getItem('panel') || 'calc');
 
     // ------- calculator -------
-    const odds=$('#odds'), pPct=$('#pPct'), bank=$('#bank'), frac=$('#frac');
-    const fracLbl=$('#fracLbl'), fracNote=$('#fracNote');
+    const odds=$('#odds'), pPct=$('#pPct'), bank=$('#bank'), frac=$('#frac'), capPct=$('#capPct');
+    const fracLbl=$('#fracLbl'), fracNote=$('#fracNote'), capNote=$('#capNote');
     function updateFracLabel(){ const v=parseFloat(frac.value||'0'); const t=v.toFixed(2)+'x'; fracLbl.textContent=t; if(fracNote) fracNote.textContent=t; }
+
     function calc(){
       const o=parseFloat(odds.value);
       const p=(parseFloat(pPct.value)||0)/100;
       const bnk=parseFloat(bank.value);
       const f=Math.min(1, Math.max(0, parseFloat(frac.value)||0));
-      if(!o || p<=0 || !bnk){ ['edgeOut','evOut','kellyPctOut','stakeOut'].forEach(id=>$('#'+id).textContent='—'); return; }
+      const cap=(parseFloat(capPct.value)||0)/100;
+      if(!o || p<=0 || !bnk){ ['edgeOut','evOut','kellyPctOut','stakeOut'].forEach(id=>$('#'+id).textContent='—'); capNote.textContent=''; return; }
       const implied=1/o, edge=p-implied, EV=p*o-1, B=o-1, q=1-p;
       let k=(B*p - q)/B; if(!Number.isFinite(k)) k=0; k=Math.max(0, Math.min(1, k));
+      const stakeKelly = bnk * k * f;
+      const stakeCap   = bnk * cap;
+      const stake      = cap>0 ? Math.min(stakeKelly, stakeCap) : stakeKelly;
+      const capped     = cap>0 && stakeKelly>stakeCap;
+
       $('#edgeOut').textContent=pct(edge,2);
       $('#evOut').textContent=fmt(EV,3);
       $('#kellyPctOut').textContent=pct(k,2);
-      $('#stakeOut').textContent='$'+fmt(bnk*k*f,2);
+      $('#stakeOut').textContent='$'+fmt(stake,2);
+      capNote.textContent = capped ? ` (capped at ${fmt(cap*100,1)}%)` : '';
     }
-    [odds,pPct,bank].forEach(el=>el.addEventListener('input', calc));
-    frac.addEventListener('input', ()=>{ updateFracLabel(); calc(); });
+    [odds,pPct,bank,frac,capPct].forEach(el=>el.addEventListener('input', calc));
     $$('[data-frac]').forEach(b=>b.addEventListener('click', ()=>{ frac.value=parseFloat(b.dataset.frac); updateFracLabel(); calc(); }));
     $('#setFair').addEventListener('click', ()=>{ const o=parseFloat(odds.value); if(!o) return; pPct.value=(100/o).toFixed(2); calc(); });
-    $('#clearAll').addEventListener('click', ()=>{ [odds,pPct,bank].forEach(el=>el.value=''); frac.value=0.5; updateFracLabel(); calc(); });
-    $('#demo1').addEventListener('click', ()=>{ odds.value=2.40; pPct.value=45; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
-    $('#demo2').addEventListener('click', ()=>{ odds.value=1.80; pPct.value=60; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
+    $('#clearAll').addEventListener('click', ()=>{ [odds,pPct,bank].forEach(el=>el.value=''); frac.value=0.5; capPct.value=3; updateFracLabel(); calc(); });
+    $('#demo1').addEventListener('click', ()=>{ odds.value=2.40; pPct.value=45; bank.value=5000; frac.value=0.5; capPct.value=3; updateFracLabel(); calc(); });
+    $('#demo2').addEventListener('click', ()=>{ odds.value=1.80; pPct.value=60; bank.value=5000; frac.value=0.5; capPct.value=3; updateFracLabel(); calc(); });
     updateFracLabel(); calc();
 
     // ------- EV compare -------
@@ -297,10 +327,9 @@
     $('#saveBet').addEventListener('click', ()=>{
       const o=parseFloat(odds.value), p=parseFloat(pPct.value), b=parseFloat(bank.value);
       if(!o||!p||!b){ alert('Enter odds, win %, and bank first.'); return; }
-      const f=parseFloat(frac.value)||0;
-      // full Kelly to compute stake snapshot
+      const f=parseFloat(frac.value)||0, cap=(parseFloat(capPct.value)||0)/100;
       const B=o-1, q=1-p/100, k=Math.max(0, Math.min(1, ((B*(p/100)-q)/B)||0 ));
-      const stake=(b*k*f);
+      const stakeKelly=(b*k*f), stakeCap=b*cap, stake=cap>0?Math.min(stakeKelly, stakeCap):stakeKelly;
       const ts=new Date().toLocaleString();
       const list=loadHist(); list.push({ts,odds:o,pPct:p,bank:b,frac:f.toFixed(2)+'x',stake:stake.toFixed(2)});
       saveHist(list); renderHist(); go('history');
@@ -368,24 +397,46 @@
     // Build team set
     const TEAMS = [...new Set(NBL.flatMap(g=>[g.h,g.a]))].sort();
 
-    // Simple stats helpers
-    function teamStats(name){
-      const games = NBL.filter(g=>g.h===name || g.a===name);
+    // Stats with recent blending
+    function teamGames(name){ return NBL.filter(g=>g.h===name || g.a===name); }
+    function lastN(arr,n){ return arr.slice(-n); }
+
+    function teamWinRate(games, name){
+      if(!games.length) return 0;
+      const wins = games.filter(g=> (g.h===name? g.hs>g.as : g.as>g.hs)).length;
+      return wins / games.length;
+    }
+    function teamHomeWinRate(games, name){
       const home = games.filter(g=>g.h===name);
+      if(!home.length) return 0;
+      const wins = home.filter(g=>g.hs>g.as).length;
+      return wins / home.length;
+    }
+    function teamAwayWinRate(games, name){
       const away = games.filter(g=>g.a===name);
-      const wins = games.filter(g=> (g.h===name? g.hs>g.as : g.as>g.hs) ).length;
-      const hwins = home.filter(g=> g.hs>g.as ).length;
-      const awins = away.filter(g=> g.as>g.hs ).length;
-      const totals = games.map(g=>g.hs+g.as);
-      const meanTot = totals.reduce((a,b)=>a+b,0)/Math.max(1,totals.length);
+      if(!away.length) return 0;
+      const wins = away.filter(g=>g.as>g.hs).length;
+      return wins / away.length;
+    }
+    function teamMeanTotal(games){
+      if(!games.length) return 0;
+      const s = games.reduce((a,g)=>a+g.hs+g.as,0);
+      return s / games.length;
+    }
+
+    // Blended stat = (1-w)*season + w*recent(last5)
+    function blendedStats(name, w){
+      const gAll = teamGames(name);
+      const g5   = lastN(gAll, 5);
       return {
-        games: games.length,
-        win: wins/games.length || 0,
-        homeWin: hwins/Math.max(1,home.length),
-        awayWin: awins/Math.max(1,away.length),
-        meanTot
+        win: (1-w)*teamWinRate(gAll,name) + w*teamWinRate(g5,name),
+        homeWin: (1-w)*teamHomeWinRate(gAll,name) + w*teamHomeWinRate(g5,name),
+        awayWin: (1-w)*teamAwayWinRate(gAll,name) + w*teamAwayWinRate(g5,name),
+        meanTot: (1-w)*teamMeanTotal(gAll) + w*teamMeanTotal(g5),
+        nAll: gAll.length, n5: g5.length
       };
     }
+
     function headToHead(a,b){
       const g = NBL.filter(x=> (x.h===a && x.a===b) || (x.h===b && x.a===a));
       if(!g.length) return {pA:0.5,n:0};
@@ -394,29 +445,26 @@
     }
     const LEAGUE_MEAN_TOTAL = NBL.reduce((s,g)=>s+g.hs+g.as,0)/NBL.length;
 
-    // Empirical probability blend:
-    // p = 0.5*(A overall vs B overall) + 0.3*(home/away split) + 0.2*(H2H if any)
-    function impliedHomeWin(A,B){
-      const sA = teamStats(A), sB = teamStats(B);
-      const base = (sA.win + (1 - sB.win))/2; // how strong A vs weakness of B
+    // Probability model (blends recent via w)
+    function impliedHomeWin(A,B,w){
+      const sA = blendedStats(A,w), sB = blendedStats(B,w);
+      const base = (sA.win + (1 - sB.win))/2;
       const ha = (sA.homeWin + (1 - sB.awayWin))/2;
       const hh = headToHead(A,B);
       const h2h = hh.n ? hh.pA : 0.5;
       let p = 0.5*base + 0.3*ha + 0.2*h2h;
-      // small-sample sanity caps
-      p = Math.max(0.05, Math.min(0.95, p));
-      return {p, explain:{base,ha,h2h, hhN:hh.n}};
+      p = Math.max(0.05, Math.min(0.95, p)); // sanity caps
+      return {p, explain:{base,ha,h2h, hhN:hh.n, sA, sB}};
     }
 
-    function totalsBaseline(A,B){
-      const sA = teamStats(A), sB = teamStats(B);
-      // mean of teams' mean totals, with 20% pull toward league mean
+    function totalsBaseline(A,B,w){
+      const sA = blendedStats(A,w), sB = blendedStats(B,w);
       const m = (sA.meanTot + sB.meanTot)/2;
       return 0.8*m + 0.2*LEAGUE_MEAN_TOTAL;
     }
 
     // UI wire-up
-    const selH = $('#nblHome'), selA = $('#nblAway');
+    const selH = $('#nblHome'), selA = $('#nblAway'), recentW = $('#recentW'), recentLbl = $('#recentLbl');
     function populateTeams(){
       selH.innerHTML = TEAMS.map(t=>`<option>${t}</option>`).join('');
       selA.innerHTML = TEAMS.map(t=>`<option>${t}</option>`).join('');
@@ -424,19 +472,21 @@
       selA.value = 'Perth Wildcats';
     }
     populateTeams();
-
     $('#reloadNBL').addEventListener('click', populateTeams);
     $('#nblSwap').addEventListener('click', ()=>{ const h=selH.value; selH.value=selA.value; selA.value=h; });
 
+    function updateRecentLabel(){ recentLbl.textContent = parseFloat(recentW.value).toFixed(2); }
+    recentW.addEventListener('input', updateRecentLabel); updateRecentLabel();
+
     $('#nblCalc').addEventListener('click', ()=>{
-      const A = selH.value, B = selA.value;
+      const A = selH.value, B = selA.value, w=parseFloat(recentW.value)||0;
       if(A===B){ alert('Pick two different teams.'); return; }
-      const r = impliedHomeWin(A,B);
+      const r = impliedHomeWin(A,B,w);
       $('#nblPH').textContent = pct(r.p,1);
-      $('#nblPHNote').textContent = `base:${pct(r.explain.base,1)} • H/A:${pct(r.explain.ha,1)} • H2H:${pct(r.explain.h2h,1)} (n=${r.explain.hhN})`;
-      const mt = totalsBaseline(A,B);
+      $('#nblPHNote').textContent = `base:${pct(r.explain.base,1)} • H/A:${pct(r.explain.ha,1)} • H2H:${pct(r.explain.h2h,1)} (n=${r.explain.hhN}) • w=${w.toFixed(2)}`;
+      const mt = totalsBaseline(A,B,w);
       $('#nblTot').textContent = fmt(mt,1);
-      $('#nblTotNote').textContent = `League mean ${fmt(LEAGUE_MEAN_TOTAL,1)} • Team means ${fmt(teamStats(A).meanTot,1)} & ${fmt(teamStats(B).meanTot,1)}`;
+      $('#nblTotNote').textContent = `League mean ${fmt(LEAGUE_MEAN_TOTAL,1)} • Team means ${fmt(r.explain.sA.meanTot,1)} & ${fmt(r.explain.sB.meanTot,1)} (blended w=${w.toFixed(2)})`;
     });
   </script>
 </body>
