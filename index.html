@@ -4,62 +4,45 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <title>EV & Kelly App</title>
-<meta name="description" content="Fast stake sizing with edge, EV and fractional Kelly — with EV Compare, NBL and History." />
 <link rel="icon" href="data:,">
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
   tailwind.config = {
     theme: {
       extend: {
-        fontFamily: { ui: ['Inter', 'ui-sans-serif','system-ui','Segoe UI','Roboto','Helvetica','Arial','sans-serif'] },
-        boxShadow: {
-          card: '0 1px 0 0 rgba(255,255,255,0.06) inset, 0 8px 24px -12px rgba(0,0,0,0.7)'
-        }
+        fontFamily: { ui: ['Inter','ui-sans-serif','system-ui','Segoe UI','Roboto','Helvetica','Arial','sans-serif'] },
+        boxShadow: { card:'0 1px 0 0 rgba(255,255,255,0.06) inset, 0 8px 24px -12px rgba(0,0,0,0.7)' }
       }
     }
   }
 </script>
 <style>
   :root { color-scheme: dark; }
-  html, body { background: #0a0a0a; }
-  .safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
-  .card { @apply rounded-2xl bg-zinc-900/60 border border-zinc-800 shadow-card backdrop-blur px-4 py-3; }
-  .field { @apply w-full bg-zinc-950/80 border border-zinc-800 rounded-lg px-3 py-2 text-[15px] placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition; }
-  .btn { @apply inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-medium border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 active:scale-[.99] transition; }
+  html, body { background:#0b0c0e; }
+  .safe { padding-left:env(safe-area-inset-left); padding-right:env(safe-area-inset-right); }
+  .card { @apply rounded-2xl border border-zinc-800 bg-[#111318]/90 backdrop-blur px-4 py-4 shadow-card; }
+  .field { @apply w-full rounded-lg border border-zinc-800 bg-[#0e1013] px-3 py-2 text-[15px] placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40; }
+  .btn { @apply inline-flex items-center justify-center rounded-lg border border-zinc-800 bg-[#111318] px-3 py-2 text-sm font-medium hover:bg-zinc-800; }
   .btn-primary { @apply border-transparent bg-white/95 text-black hover:bg-white; }
-  .chip { @apply inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-300; }
-
-  /* Bottom nav */
+  .chip { @apply inline-flex items-center rounded-md bg-zinc-800 px-2 py-0.5 text-[11px] font-medium; }
   .navbtn { @apply flex flex-col items-center justify-center gap-1 text-[11px] py-2 rounded-lg text-zinc-400; }
   .navbtn.active { @apply bg-zinc-800 text-zinc-100; }
-
-  /* iOS range styling */
-  input[type="range"] { -webkit-appearance: none; width: 100%; height: 28px; background: transparent; }
-  input[type="range"]::-webkit-slider-runnable-track { height: 4px; background: #3f3f46; border-radius: 999px; }
-  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; background: #fff; border-radius: 999px; margin-top: -8px; box-shadow: 0 3px 10px rgba(0,0,0,.35); }
-  input[type="range"]::-moz-range-track { height: 4px; background: #3f3f46; border-radius: 999px; }
-  input[type="range"]::-moz-range-thumb { width: 20px; height: 20px; background: #fff; border: none; border-radius: 999px; }
-
-  /* Fix iOS Safari autofill white boxes */
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus {
-    -webkit-text-fill-color: #e4e4e7;
-    -webkit-box-shadow: 0 0 0px 1000px #0c0c0d inset;
-    transition: background-color 9999s ease-in-out 0s;
-    caret-color: #e4e4e7;
-  }
+  input[type="range"]{ -webkit-appearance:none;width:100%;height:28px;background:transparent }
+  input[type="range"]::-webkit-slider-runnable-track{ height:4px;background:#2f3340;border-radius:999px }
+  input[type="range"]::-webkit-slider-thumb{ -webkit-appearance:none;width:22px;height:22px;background:#fff;border-radius:999px;margin-top:-9px;box-shadow:0 3px 10px rgba(0,0,0,.3) }
+  input[type="range"]::-moz-range-track{ height:4px;background:#2f3340;border-radius:999px }
+  input[type="range"]::-moz-range-thumb{ width:22px;height:22px;background:#fff;border:none;border-radius:999px }
 </style>
 </head>
 
 <body class="text-zinc-100 font-ui selection:bg-zinc-700">
   <!-- HEADER -->
-  <header class="safe sticky top-0 z-30 border-b border-zinc-800 bg-gradient-to-b from-zinc-950 to-zinc-900/60 backdrop-blur">
+  <header class="safe sticky top-0 z-30 border-b border-zinc-800 bg-gradient-to-b from-[#0b0c0e] to-[#0b0c0e]/70 backdrop-blur">
     <div class="max-w-screen-sm mx-auto px-3 py-3">
       <div class="flex items-center gap-3">
         <div class="w-7 h-7 rounded-lg bg-blue-500/90 flex items-center justify-center font-bold">K</div>
-        <div class="min-w-0">
-          <h1 class="text-[18px] font-semibold leading-tight">EV & Kelly App</h1>
+        <div>
+          <h1 class="text-[18px] font-semibold leading-tight">EV &amp; Kelly App</h1>
           <p class="text-[12px] text-zinc-400">Fast stake sizing with edge, EV, and fractional Kelly.</p>
         </div>
       </div>
@@ -68,10 +51,11 @@
 
   <!-- MAIN -->
   <main class="safe max-w-screen-sm mx-auto px-3 pt-3 pb-24 space-y-5">
-    <!-- CALCULATOR -->
+
+    <!-- ===== CALCULATOR ===== -->
     <section data-panel="calc" class="space-y-4">
-      <div class="card space-y-3">
-        <div class="grid grid-cols-2 gap-3">
+      <div class="card space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label class="block">
             <div class="text-[12px] text-zinc-400 mb-1">Decimal odds</div>
             <input id="odds" type="number" min="1.01" step="0.01" class="field" placeholder="e.g. 2.40">
@@ -80,20 +64,17 @@
             <div class="text-[12px] text-zinc-400 mb-1">Win probability % <span class="text-zinc-500">(your estimate)</span></div>
             <input id="pPct" type="number" min="0" max="100" step="0.1" class="field" placeholder="e.g. 45">
           </label>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
           <label class="block">
             <div class="text-[12px] text-zinc-400 mb-1">Bank size (A$)</div>
             <input id="bank" type="number" min="0" step="1" class="field" placeholder="e.g. 5000">
           </label>
           <div class="block">
-            <div class="flex items-center justify-between mb-1">
+            <div class="flex items-center justify-between mb-2">
               <div class="text-[12px] text-zinc-400">Kelly fraction</div>
               <span id="fracLbl" class="chip">0.50x</span>
             </div>
             <input id="frac" type="range" min="0" max="1" step="0.05" value="0.5" />
-            <div class="mt-2 grid grid-cols-4 gap-2">
+            <div class="mt-3 grid grid-cols-4 gap-2">
               <button class="btn" data-frac="0.25">0.25x</button>
               <button class="btn" data-frac="0.50">0.50x</button>
               <button class="btn" data-frac="0.75">0.75x</button>
@@ -101,18 +82,17 @@
             </div>
           </div>
         </div>
-
-        <div class="flex gap-2 pt-1">
+        <div class="flex gap-3 pt-1">
           <button id="setFair" class="btn">Set prob to fair (1/odds)</button>
           <button id="clearAll" class="btn">Clear</button>
         </div>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-3">
+      <section class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="card">
           <div class="text-sm text-zinc-400">Edge vs market</div>
           <div id="edgeOut" class="text-2xl font-semibold mt-1">—</div>
-          <p class="text-xs text-zinc-500 mt-1">Your prob − implied prob</p>
+          <p class="text-xs text-zinc-500 mt-1">Your prob – implied prob</p>
         </div>
         <div class="card">
           <div class="text-sm text-zinc-400">EV per $1 stake</div>
@@ -129,7 +109,7 @@
           <div id="stakeOut" class="text-2xl font-semibold mt-1">—</div>
           <p class="text-xs text-zinc-500 mt-1"><span id="fracNote">0.50x</span> of Kelly on your bank</p>
         </div>
-      </div>
+      </section>
 
       <div class="flex flex-wrap gap-2">
         <button id="saveBet" class="btn btn-primary">Save to History</button>
@@ -138,7 +118,7 @@
       </div>
     </section>
 
-    <!-- EV COMPARE -->
+    <!-- ===== EV COMPARE ===== -->
     <section data-panel="compare" class="space-y-3 hidden">
       <div class="card space-y-3">
         <div class="grid grid-cols-2 gap-3">
@@ -173,12 +153,7 @@
       </div>
     </section>
 
-    <!-- NBL (placeholder) -->
-    <section data-panel="nbl" class="space-y-3 hidden">
-      <div class="card"><p class="text-sm text-zinc-300">NBL helper (pace presets, totals & line tools) — coming soon.</p></div>
-    </section>
-
-    <!-- HISTORY -->
+    <!-- ===== HISTORY + NBL PROBABILITIES ===== -->
     <section data-panel="history" class="space-y-3 hidden">
       <div class="card">
         <div class="flex items-center justify-between">
@@ -191,6 +166,47 @@
         <div id="histEmpty" class="text-sm text-zinc-500 mt-2">No saved bets yet.</div>
         <div id="hist" class="mt-2 space-y-2"></div>
       </div>
+
+      <!-- NEW: NBL Probabilities (beta) -->
+      <div class="card space-y-3">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold">NBL Probabilities (beta)</h3>
+          <button id="reloadNBL" class="btn">Reload dataset</button>
+        </div>
+        <p class="text-sm text-zinc-400">Uses your 2025 season results (Rounds 1–7) to produce an empirical implied probability and a totals baseline.</p>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block">
+            <div class="text-[12px] text-zinc-400 mb-1">Home</div>
+            <select id="nblHome" class="field"></select>
+          </label>
+          <label class="block">
+            <div class="text-[12px] text-zinc-400 mb-1">Away</div>
+            <select id="nblAway" class="field"></select>
+          </label>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button id="nblCalc" class="btn btn-primary">Calculate implied</button>
+          <button id="nblSwap" class="btn">Swap</button>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div class="card">
+            <div class="text-sm text-zinc-400">Home win probability (empirical)</div>
+            <div id="nblPH" class="text-2xl font-semibold mt-1">—</div>
+            <p id="nblPHNote" class="text-xs text-zinc-500 mt-1"></p>
+          </div>
+          <div class="card">
+            <div class="text-sm text-zinc-400">Totals baseline (mean)</div>
+            <div id="nblTot" class="text-2xl font-semibold mt-1">—</div>
+            <p id="nblTotNote" class="text-xs text-zinc-500 mt-1"></p>
+          </div>
+        </div>
+        <p class="text-xs text-zinc-500">Method: weighted blend of team overall win%, home/away split, and current-season head-to-head (if any). Totals baseline = mean of both teams’ game totals with a small league-mean pull.</p>
+      </div>
+    </section>
+
+    <!-- ===== NBL placeholder (kept) ===== -->
+    <section data-panel="nbl" class="space-y-3 hidden">
+      <div class="card"><p class="text-sm text-zinc-300">NBL helper (pace presets, totals & line tools) — coming soon.</p></div>
     </section>
   </main>
 
@@ -205,14 +221,15 @@
   </footer>
 
   <script>
+    // ------- helpers -------
     const $ = s => document.querySelector(s);
     const $$ = s => [...document.querySelectorAll(s)];
     const show = el => el.classList.remove('hidden');
     const hide = el => el.classList.add('hidden');
-    const fmt = (n,d=2) => Number.isFinite(n)?n.toFixed(d):'—';
-    const pct = (f,d=2) => Number.isFinite(f)?(f*100).toFixed(d)+'%':'—';
+    const fmt = (n,d=2)=>Number.isFinite(n)?n.toFixed(d):'—';
+    const pct = (f,d=1)=>Number.isFinite(f)?(f*100).toFixed(d)+'%':'—';
 
-    // NAV
+    // ------- bottom nav -------
     function go(panel){
       $$('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.go===panel));
       $$('[data-panel]').forEach(p=>p.classList.toggle('hidden', p.dataset.panel!==panel));
@@ -221,50 +238,37 @@
     $$('.navbtn').forEach(b=>b.addEventListener('click', ()=>go(b.dataset.go)));
     go(localStorage.getItem('panel') || 'calc');
 
-    // CALC
+    // ------- calculator -------
     const odds=$('#odds'), pPct=$('#pPct'), bank=$('#bank'), frac=$('#frac');
     const fracLbl=$('#fracLbl'), fracNote=$('#fracNote');
-    function updateFracLabel(){
-      const v = parseFloat(frac.value||'0');
-      const txt = v.toFixed(2)+'x';
-      fracLbl.textContent = txt;
-      if (fracNote) fracNote.textContent = txt;
-    }
-    updateFracLabel();
-    frac.addEventListener('input', ()=>{ updateFracLabel(); calc(); });
-    $$('[data-frac]').forEach(b=>b.addEventListener('click', ()=>{
-      frac.value = parseFloat(b.dataset.frac); updateFracLabel(); calc();
-    }));
-
+    function updateFracLabel(){ const v=parseFloat(frac.value||'0'); const t=v.toFixed(2)+'x'; fracLbl.textContent=t; if(fracNote) fracNote.textContent=t; }
     function calc(){
       const o=parseFloat(odds.value);
       const p=(parseFloat(pPct.value)||0)/100;
       const bnk=parseFloat(bank.value);
       const f=Math.min(1, Math.max(0, parseFloat(frac.value)||0));
-      if(!o || p<=0 || !bnk){
-        ['edgeOut','evOut','kellyPctOut','stakeOut'].forEach(id=>$('#'+id).textContent='—');
-        return;
-      }
-      const implied=1/o, edge=p-implied, EV=p*o-1;
-      const B=o-1, q=1-p;
-      let kelly=(B*p - q)/B; if(!Number.isFinite(kelly)) kelly=0;
-      kelly=Math.max(0, Math.min(1, kelly));
-      $('#edgeOut').textContent=pct(edge);
+      if(!o || p<=0 || !bnk){ ['edgeOut','evOut','kellyPctOut','stakeOut'].forEach(id=>$('#'+id).textContent='—'); return; }
+      const implied=1/o, edge=p-implied, EV=p*o-1, B=o-1, q=1-p;
+      let k=(B*p - q)/B; if(!Number.isFinite(k)) k=0; k=Math.max(0, Math.min(1, k));
+      $('#edgeOut').textContent=pct(edge,2);
       $('#evOut').textContent=fmt(EV,3);
-      $('#kellyPctOut').textContent=pct(kelly);
-      $('#stakeOut').textContent= '$'+fmt(bnk*kelly*f,2);
+      $('#kellyPctOut').textContent=pct(k,2);
+      $('#stakeOut').textContent='$'+fmt(bnk*k*f,2);
     }
     [odds,pPct,bank].forEach(el=>el.addEventListener('input', calc));
+    frac.addEventListener('input', ()=>{ updateFracLabel(); calc(); });
+    $$('[data-frac]').forEach(b=>b.addEventListener('click', ()=>{ frac.value=parseFloat(b.dataset.frac); updateFracLabel(); calc(); }));
     $('#setFair').addEventListener('click', ()=>{ const o=parseFloat(odds.value); if(!o) return; pPct.value=(100/o).toFixed(2); calc(); });
     $('#clearAll').addEventListener('click', ()=>{ [odds,pPct,bank].forEach(el=>el.value=''); frac.value=0.5; updateFracLabel(); calc(); });
     $('#demo1').addEventListener('click', ()=>{ odds.value=2.40; pPct.value=45; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
     $('#demo2').addEventListener('click', ()=>{ odds.value=1.80; pPct.value=60; bank.value=5000; frac.value=0.5; updateFracLabel(); calc(); });
+    updateFracLabel(); calc();
 
-    // COMPARE
+    // ------- EV compare -------
     function calcCompare(){
       const pa=parseFloat($('#c-pa').value)/100, pb=parseFloat($('#c-pb').value)/100;
       const oa=parseFloat($('#c-oa').value), ob=parseFloat($('#c-ob').value);
-      if(![pa,pb,oa,ob].every(x=>Number.isFinite(x)&&x>0)){ ['c-eva','c-evb','c-best'].forEach(id=>$('#'+id).textContent='—'); return; }
+      if(![pa,pb,oa,ob].every(x=>Number.isFinite(x) && x>0)){ ['c-eva','c-evb','c-best'].forEach(id=>$('#'+id).textContent='—'); return; }
       const eva=pa*oa-1, evb=pb*ob-1;
       $('#c-eva').textContent=fmt(eva,3);
       $('#c-evb').textContent=fmt(evb,3);
@@ -274,7 +278,7 @@
     ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).addEventListener('input', calcCompare));
     $('#c-clear').addEventListener('click', ()=>{ ['c-pa','c-pb','c-oa','c-ob'].forEach(id=>$('#'+id).value=''); calcCompare(); });
 
-    // HISTORY
+    // ------- history -------
     const loadHist=()=>JSON.parse(localStorage.getItem('evk:hist')||'[]');
     const saveHist=a=>localStorage.setItem('evk:hist', JSON.stringify(a));
     function renderHist(){
@@ -294,6 +298,7 @@
       const o=parseFloat(odds.value), p=parseFloat(pPct.value), b=parseFloat(bank.value);
       if(!o||!p||!b){ alert('Enter odds, win %, and bank first.'); return; }
       const f=parseFloat(frac.value)||0;
+      // full Kelly to compute stake snapshot
       const B=o-1, q=1-p/100, k=Math.max(0, Math.min(1, ((B*(p/100)-q)/B)||0 ));
       const stake=(b*k*f);
       const ts=new Date().toLocaleString();
@@ -310,8 +315,129 @@
       const a=document.createElement('a'); a.href=url; a.download='ev_kelly_history.csv'; a.click(); URL.revokeObjectURL(url);
     });
 
-    // Initial calc
-    calc();
+    // ------- NBL dataset (Rounds 1–7 this season) -------
+    const NBL = [
+      {r:7,d:'02.11',h:'Adelaide 36ers',a:'Illawarra Hawks',hs:90,as:88},
+      {r:7,d:'02.11',h:'South East Melbourne',a:'Perth Wildcats',hs:94,as:89},
+      {r:7,d:'01.11',h:'Brisbane Bullets',a:'Sydney Kings',hs:79,as:116},
+      {r:7,d:'01.11',h:'Tasmania JackJumpers',a:'Cairns Taipans',hs:69,as:75},
+      {r:7,d:'31.10',h:'Illawarra Hawks',a:'NZ Breakers',hs:60,as:102},
+      {r:7,d:'30.10',h:'Brisbane Bullets',a:'Cairns Taipans',hs:113,as:85},
+      {r:7,d:'29.10',h:'Tasmania JackJumpers',a:'Perth Wildcats',hs:84,as:95},
+      {r:6,d:'26.10',h:'Sydney Kings',a:'Tasmania JackJumpers',hs:89,as:90},
+      {r:6,d:'26.10',h:'Melbourne United',a:'Adelaide 36ers',hs:81,as:80},
+      {r:6,d:'25.10',h:'Perth Wildcats',a:'Illawarra Hawks',hs:84,as:85},
+      {r:6,d:'25.10',h:'Brisbane Bullets',a:'South East Melbourne',hs:86,as:109},
+      {r:6,d:'24.10',h:'Cairns Taipans',a:'Melbourne United',hs:67,as:94},
+      {r:6,d:'23.10',h:'South East Melbourne',a:'Sydney Kings',hs:112,as:95},
+      {r:6,d:'23.10',h:'NZ Breakers',a:'Brisbane Bullets',hs:83,as:84},
+      {r:6,d:'22.10',h:'Cairns Taipans',a:'Perth Wildcats',hs:78,as:110},
+      {r:5,d:'19.10',h:'Sydney Kings',a:'Perth Wildcats',hs:94,as:72},
+      {r:5,d:'19.10',h:'Melbourne United',a:'NZ Breakers',hs:104,as:88},
+      {r:5,d:'18.10',h:'South East Melbourne',a:'Illawarra Hawks',hs:116,as:76},
+      {r:5,d:'18.10',h:'Cairns Taipans',a:'Adelaide 36ers',hs:86,as:91},
+      {r:5,d:'17.10',h:'Brisbane Bullets',a:'Melbourne United',hs:86,as:95},
+      {r:5,d:'17.10',h:'NZ Breakers',a:'Tasmania JackJumpers',hs:82,as:65},
+      {r:5,d:'16.10',h:'Adelaide 36ers',a:'South East Melbourne',hs:88,as:71},
+      {r:5,d:'15.10',h:'Perth Wildcats',a:'Brisbane Bullets',hs:93,as:110},
+      {r:5,d:'15.10',h:'Tasmania JackJumpers',a:'Sydney Kings',hs:86,as:70},
+      {r:4,d:'12.10',h:'Melbourne United',a:'Cairns Taipans',hs:95,as:60},
+      {r:4,d:'12.10',h:'NZ Breakers',a:'South East Melbourne',hs:81,as:87},
+      {r:4,d:'11.10',h:'Adelaide 36ers',a:'Sydney Kings',hs:79,as:103},
+      {r:4,d:'11.10',h:'Illawarra Hawks',a:'Brisbane Bullets',hs:116,as:89},
+      {r:4,d:'10.10',h:'Cairns Taipans',a:'Perth Wildcats',hs:77,as:80},
+      {r:4,d:'09.10',h:'Adelaide 36ers',a:'Tasmania JackJumpers',hs:98,as:89},
+      {r:4,d:'08.10',h:'Sydney Kings',a:'Melbourne United',hs:93,as:107},
+      {r:4,d:'08.10',h:'NZ Breakers',a:'Illawarra Hawks',hs:117,as:88},
+      {r:3,d:'04.10',h:'Brisbane Bullets',a:'Tasmania JackJumpers',hs:82,as:84},
+      {r:3,d:'04.10',h:'Sydney Kings',a:'NZ Breakers',hs:97,as:75},
+      {r:3,d:'02.10',h:'Perth Wildcats',a:'Illawarra Hawks',hs:92,as:84},
+      {r:3,d:'02.10',h:'Cairns Taipans',a:'Adelaide 36ers',hs:79,as:110},
+      {r:2,d:'28.09',h:'Adelaide 36ers',a:'Brisbane Bullets',hs:87,as:80},
+      {r:2,d:'28.09',h:'Sydney Kings',a:'Cairns Taipans',hs:74,as:77},
+      {r:2,d:'27.09',h:'Illawarra Hawks',a:'Tasmania JackJumpers',hs:86,as:91},
+      {r:2,d:'27.09',h:'NZ Breakers',a:'Perth Wildcats',hs:78,as:89},
+      {r:2,d:'26.09',h:'Cairns Taipans',a:'Brisbane Bullets',hs:83,as:82},
+      {r:2,d:'25.09',h:'Melbourne United',a:'South East Melbourne',hs:103,as:83},
+      {r:1,d:'21.09',h:'Melbourne United',a:'NZ Breakers',hs:114,as:82},
+      {r:1,d:'20.09',h:'Perth Wildcats',a:'Tasmania JackJumpers',hs:72,as:75},
+      {r:1,d:'20.09',h:'South East Melbourne',a:'Cairns Taipans',hs:114,as:77},
+      {r:1,d:'19.09',h:'NZ Breakers',a:'Brisbane Bullets',hs:95,as:104},
+    ];
+
+    // Build team set
+    const TEAMS = [...new Set(NBL.flatMap(g=>[g.h,g.a]))].sort();
+
+    // Simple stats helpers
+    function teamStats(name){
+      const games = NBL.filter(g=>g.h===name || g.a===name);
+      const home = games.filter(g=>g.h===name);
+      const away = games.filter(g=>g.a===name);
+      const wins = games.filter(g=> (g.h===name? g.hs>g.as : g.as>g.hs) ).length;
+      const hwins = home.filter(g=> g.hs>g.as ).length;
+      const awins = away.filter(g=> g.as>g.hs ).length;
+      const totals = games.map(g=>g.hs+g.as);
+      const meanTot = totals.reduce((a,b)=>a+b,0)/Math.max(1,totals.length);
+      return {
+        games: games.length,
+        win: wins/games.length || 0,
+        homeWin: hwins/Math.max(1,home.length),
+        awayWin: awins/Math.max(1,away.length),
+        meanTot
+      };
+    }
+    function headToHead(a,b){
+      const g = NBL.filter(x=> (x.h===a && x.a===b) || (x.h===b && x.a===a));
+      if(!g.length) return {pA:0.5,n:0};
+      const aWins = g.filter(x=> (x.h===a? x.hs>x.as : x.as>x.hs)).length;
+      return {pA: aWins/g.length, n:g.length};
+    }
+    const LEAGUE_MEAN_TOTAL = NBL.reduce((s,g)=>s+g.hs+g.as,0)/NBL.length;
+
+    // Empirical probability blend:
+    // p = 0.5*(A overall vs B overall) + 0.3*(home/away split) + 0.2*(H2H if any)
+    function impliedHomeWin(A,B){
+      const sA = teamStats(A), sB = teamStats(B);
+      const base = (sA.win + (1 - sB.win))/2; // how strong A vs weakness of B
+      const ha = (sA.homeWin + (1 - sB.awayWin))/2;
+      const hh = headToHead(A,B);
+      const h2h = hh.n ? hh.pA : 0.5;
+      let p = 0.5*base + 0.3*ha + 0.2*h2h;
+      // small-sample sanity caps
+      p = Math.max(0.05, Math.min(0.95, p));
+      return {p, explain:{base,ha,h2h, hhN:hh.n}};
+    }
+
+    function totalsBaseline(A,B){
+      const sA = teamStats(A), sB = teamStats(B);
+      // mean of teams' mean totals, with 20% pull toward league mean
+      const m = (sA.meanTot + sB.meanTot)/2;
+      return 0.8*m + 0.2*LEAGUE_MEAN_TOTAL;
+    }
+
+    // UI wire-up
+    const selH = $('#nblHome'), selA = $('#nblAway');
+    function populateTeams(){
+      selH.innerHTML = TEAMS.map(t=>`<option>${t}</option>`).join('');
+      selA.innerHTML = TEAMS.map(t=>`<option>${t}</option>`).join('');
+      selH.value = 'Sydney Kings';
+      selA.value = 'Perth Wildcats';
+    }
+    populateTeams();
+
+    $('#reloadNBL').addEventListener('click', populateTeams);
+    $('#nblSwap').addEventListener('click', ()=>{ const h=selH.value; selH.value=selA.value; selA.value=h; });
+
+    $('#nblCalc').addEventListener('click', ()=>{
+      const A = selH.value, B = selA.value;
+      if(A===B){ alert('Pick two different teams.'); return; }
+      const r = impliedHomeWin(A,B);
+      $('#nblPH').textContent = pct(r.p,1);
+      $('#nblPHNote').textContent = `base:${pct(r.explain.base,1)} • H/A:${pct(r.explain.ha,1)} • H2H:${pct(r.explain.h2h,1)} (n=${r.explain.hhN})`;
+      const mt = totalsBaseline(A,B);
+      $('#nblTot').textContent = fmt(mt,1);
+      $('#nblTotNote').textContent = `League mean ${fmt(LEAGUE_MEAN_TOTAL,1)} • Team means ${fmt(teamStats(A).meanTot,1)} & ${fmt(teamStats(B).meanTot,1)}`;
+    });
   </script>
 </body>
 </html>
