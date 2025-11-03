@@ -1,187 +1,176 @@
-<!-- ===== Remove/Hide Bet History ===== -->
-<!-- If the old Bet history block must remain in the DOM for now, keep it but hide it: -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NBL EV & Kelly</title>
+
 <style>
-  /* comment this out if you fully delete the bet history HTML */
-  #bet-history { display:none !important; }
+body {
+  background:#000;
+  color:#ddd;
+  font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  margin:0; padding:18px;
+}
+
+/* Hide Bet History */
+#bet-history { display:none !important; }
+
+/* Label styling */
+label { display:block; color:#aaa; margin:10px 0 6px; font-size:14px; }
+
+/* Hide native select (still accessible & triggers change events) */
+.team-native {
+  position:absolute; opacity:0; pointer-events:none; height:0; width:0;
+}
+
+/* Dropdown wrapper */
+.team-wrap { position:relative; margin-bottom:18px; }
+
+/* Button */
+.team-btn {
+  width:100%;
+  display:flex; align-items:center; justify-content:space-between;
+  background:#1b1b1b; color:#eee;
+  border:1px solid #333; border-radius:10px;
+  padding:10px 12px; font-size:16px;
+}
+.team-btn:focus { outline:2px solid #5a9; }
+
+/* Value shown */
+.team-btn .val { display:flex; align-items:center; gap:10px; min-height:28px; }
+.team-btn img { width:22px; height:22px; object-fit:contain; border-radius:4px; background:#111; display:none; }
+.team-btn.has-logo img { display:inline-block; }
+
+.caret { opacity:.7; }
+
+/* Menu */
+.team-menu {
+  position:absolute; left:0; right:0; top:calc(100% + 6px);
+  z-index:99;
+  background:#111; border:1px solid #222; border-radius:8px;
+  max-height:320px; overflow:auto; padding:6px; display:none;
+}
+.team-menu.open { display:block; }
+
+/* Menu item */
+.team-opt {
+  display:flex; align-items:center; gap:10px;
+  padding:8px; border-radius:6px;
+  cursor:pointer; color:#eaeaea;
+}
+.team-opt:hover, .team-opt[aria-selected="true"] { background:#242424; }
+.team-opt img { width:22px; height:22px; object-fit:contain; border-radius:4px; background:#111; }
+
+/* Slider placeholder spacing */
+.slider-box { margin:20px 0; }
 </style>
+</head>
 
-<!-- ===== Team Select with Logos (Home & Away) ===== -->
-<style>
-  .team-select {
-    position: relative;
-    width: 100%;
-    max-width: 420px;
-    margin: 12px 0;
-  }
-  .team-select-label {
-    display:block;
-    font-size: 0.95rem;
-    margin: 0 0 6px;
-    color: #ddd;
-  }
-  .team-select-btn {
-    width: 100%;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 10px;
-    padding: 10px 12px;
-    border: 1px solid #3a3a3a; border-radius: 8px;
-    background: #1b1b1b; color: #f0f0f0;
-    font-size: 16px;
-  }
-  .team-select-btn:focus { outline: 2px solid #5a9; }
-  .team-select-btn .team {
-    display:flex; align-items:center; gap:10px;
-    min-height: 28px;
-  }
-  .team-select-btn img {
-    width: 24px; height: 24px; object-fit: contain; border-radius: 4px;
-    background: #111;
-  }
-  .team-menu {
-    position: absolute; left: 0; right: 0; top: calc(100% + 6px);
-    z-index: 50;
-    background: #111; border: 1px solid #2a2a2a; border-radius: 8px;
-    max-height: 320px; overflow: auto; padding: 6px;
-    display: none;
-  }
-  .team-menu.open { display:block; }
-  .team-item {
-    display:flex; align-items:center; gap:10px;
-    padding: 8px; border-radius: 6px; cursor: pointer;
-    color:#eaeaea;
-  }
-  .team-item:hover, .team-item[aria-selected="true"] { background:#242424; }
-  .team-item img { width: 22px; height: 22px; object-fit: contain; border-radius:4px; background:#111; }
-  .caret { margin-left: 8px; opacity: .7 }
-  /* small helper for layout */
-  .team-row { display:flex; gap:16px; flex-wrap:wrap; }
-  .team-select[aria-expanded="true"] .caret { transform: rotate(180deg); }
-</style>
+<body>
+<h2>NBL Probability Model</h2>
 
-<div class="team-row">
-  <!-- Home -->
-  <div class="team-select" id="homeTeamSelect" aria-expanded="false">
-    <span class="team-select-label">Home</span>
-    <button class="team-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-      <span class="team"><img alt="" src="" /><span class="team-name">Select team…</span></span>
-      <span class="caret">▾</span>
-    </button>
-    <div class="team-menu" role="listbox"></div>
-    <!-- Hidden input to keep compatibility with existing JS expecting #homeTeam value -->
-    <input type="hidden" id="homeTeam" name="homeTeam" />
-  </div>
+<!-- Home -->
+<label for="homeTeam">Home</label>
+<select id="homeTeam" class="team-native">
+  <option value="">Select team…</option>
+  <option value="MEL" data-logo="https://yourcdn/nbl/melbourne-united.png">Melbourne United</option>
+  <option value="SYD" data-logo="https://yourcdn/nbl/sydney-kings.png">Sydney Kings</option>
+  <option value="PER" data-logo="https://yourcdn/nbl/perth-wildcats.png">Perth Wildcats</option>
+  <option value="ADL" data-logo="https://yourcdn/nbl/adelaide-36ers.png">Adelaide 36ers</option>
+  <option value="BRI" data-logo="https://yourcdn/nbl/brisbane-bullets.png">Brisbane Bullets</option>
+  <option value="NZB" data-logo="https://yourcdn/nbl/nz-breakers.png">NZ Breakers</option>
+  <option value="ILL" data-logo="https://yourcdn/nbl/illawarra-hawks.png">Illawarra Hawks</option>
+  <option value="TAI" data-logo="https://yourcdn/nbl/tasmania-jackjumpers.png">Tasmania JackJumpers</option>
+  <option value="SEM" data-logo="https://yourcdn/nbl/se-melbourne-phoenix.png">SE Melbourne Phoenix</option>
+</select>
 
-  <!-- Away -->
-  <div class="team-select" id="awayTeamSelect" aria-expanded="false">
-    <span class="team-select-label">Away</span>
-    <button class="team-select-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-      <span class="team"><img alt="" src="" /><span class="team-name">Select team…</span></span>
-      <span class="caret">▾</span>
-    </button>
-    <div class="team-menu" role="listbox"></div>
-    <!-- Hidden input to keep compatibility with existing JS expecting #awayTeam value -->
-    <input type="hidden" id="awayTeam" name="awayTeam" />
-  </div>
+<!-- Away -->
+<label for="awayTeam">Away</label>
+<select id="awayTeam" class="team-native">
+  <option value="">Select team…</option>
+  <option value="MEL" data-logo="https://yourcdn/nbl/melbourne-united.png">Melbourne United</option>
+  <option value="SYD" data-logo="https://yourcdn/nbl/sydney-kings.png">Sydney Kings</option>
+  <option value="PER" data-logo="https://yourcdn/nbl/perth-wildcats.png">Perth Wildcats</option>
+  <option value="ADL" data-logo="https://yourcdn/nbl/adelaide-36ers.png">Adelaide 36ers</option>
+  <option value="BRI" data-logo="https://yourcdn/nbl/brisbane-bullets.png">Brisbane Bullets</option>
+  <option value="NZB" data-logo="https://yourcdn/nbl/nz-breakers.png">NZ Breakers</option>
+  <option value="ILL" data-logo="https://yourcdn/nbl/illawarra-hawks.png">Illawarra Hawks</option>
+  <option value="TAI" data-logo="https://yourcdn/nbl/tasmania-jackjumpers.png">Tasmania JackJumpers</option>
+  <option value="SEM" data-logo="https://yourcdn/nbl/se-melbourne-phoenix.png">SE Melbourne Phoenix</option>
+</select>
+
+<!-- Placeholder for your slider & outputs -->
+<div class="slider-box">
+  <label>Recent form weight</label>
+  <input type="range" min="0" max="1" step="0.01" value="0.4">
 </div>
 
+<div id="result">Select teams to calculate...</div>
+
 <script>
-  // ===== Team data (add all teams + correct logo URLs) =====
-  const TEAMS = [
-    { id: 'SYD', name: 'Sydney Kings',    logo: 'https://yourcdn.example/nbl/sydney-kings.png' },
-    { id: 'PER', name: 'Perth Wildcats',  logo: 'https://yourcdn.example/nbl/perth-wildcats.png' },
-    { id: 'MEL', name: 'Melbourne United',logo: 'https://yourcdn.example/nbl/melbourne-united.png' },
-    { id: 'ADL', name: 'Adelaide 36ers',  logo: 'https://yourcdn.example/nbl/adelaide-36ers.png' },
-    { id: 'BRI', name: 'Brisbane Bullets',logo: 'https://yourcdn.example/nbl/brisbane-bullets.png' },
-    { id: 'NZB', name: 'NZ Breakers',     logo: 'https://yourcdn.example/nbl/nz-breakers.png' },
-    { id: 'ILL', name: 'Illawarra Hawks', logo: 'https://yourcdn.example/nbl/illawarra-hawks.png' },
-    { id: 'TAI', name: 'Tasmania JackJumpers', logo: 'https://yourcdn.example/nbl/tasmania-jackjumpers.png' },
-    { id: 'SEM', name: 'SE Melbourne Phoenix', logo: 'https://yourcdn.example/nbl/se-melbourne-phoenix.png' }
-  ];
+(function enhanceTeamSelects() {
+  function enhance(select) {
+    const wrap = document.createElement('div');
+    wrap.className = 'team-wrap';
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
 
-  // ===== Utility: build one selector =====
-  function initTeamSelect(rootId, hiddenInputId, defaultId=null) {
-    const root  = document.getElementById(rootId);
-    const btn   = root.querySelector('.team-select-btn');
-    const img   = btn.querySelector('img');
-    const nameSpan = btn.querySelector('.team-name');
-    const menu  = root.querySelector('.team-menu');
-    const hidden = document.getElementById(hiddenInputId);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'team-btn';
+    btn.innerHTML = `<span class="val"><img alt=""><span class="name">Select team…</span></span><span class="caret">▾</span>`;
+    wrap.appendChild(btn);
 
-    // Build menu
-    TEAMS.forEach(t => {
-      const item = document.createElement('div');
-      item.className = 'team-item';
-      item.role = 'option';
-      item.dataset.id = t.id;
-      item.innerHTML = `<img alt="" src="${t.logo}"><span>${t.name}</span>`;
-      item.addEventListener('click', () => {
-        selectTeam(t);
-        close();
-        // Fire a change event so your existing logic can listen for it
-        hidden.dispatchEvent(new Event('change', { bubbles: true }));
-      });
-      menu.appendChild(item);
+    const menu = document.createElement('div');
+    menu.className = 'team-menu';
+    wrap.appendChild(menu);
+
+    [...select.options].forEach(opt => {
+      if (!opt.value) return;
+      const div = document.createElement('div');
+      div.className = 'team-opt';
+      div.dataset.value = opt.value;
+
+      const logo = opt.getAttribute('data-logo') || '';
+      div.innerHTML = `<img src="${logo}"><span>${opt.text}</span>`;
+      div.onclick = () => {
+        select.value = opt.value;
+        sync();
+        menu.classList.remove('open');
+        select.dispatchEvent(new Event('change', { bubbles:true }));
+      };
+      menu.appendChild(div);
     });
 
-    function selectTeam(team) {
-      img.src = team.logo;
-      nameSpan.textContent = team.name;
-      hidden.value = team.id; // matches old #homeTeam / #awayTeam usage
-      // mark selected in menu
-      [...menu.children].forEach(el => el.setAttribute('aria-selected', el.dataset.id === team.id ? 'true' : 'false'));
+    btn.onclick = () => menu.classList.toggle('open');
+    document.addEventListener('click', e => { if (!wrap.contains(e.target)) menu.classList.remove('open'); });
+
+    function sync() {
+      const opt = select.selectedOptions[0];
+      const img = btn.querySelector('img');
+      const name = btn.querySelector('.name');
+
+      if (!opt || !opt.value) {
+        name.textContent = "Select team…";
+        img.src = "";
+        btn.classList.remove("has-logo");
+        return;
+      }
+      name.textContent = opt.text;
+      const logo = opt.getAttribute('data-logo');
+      if (logo) {
+        img.src = logo;
+        btn.classList.add("has-logo");
+      }
+      [...menu.children].forEach(el => el.setAttribute('aria-selected', el.dataset.value === opt.value));
     }
-
-    function open() {
-      menu.classList.add('open');
-      root.setAttribute('aria-expanded','true');
-      btn.setAttribute('aria-expanded','true');
-    }
-    function close() {
-      menu.classList.remove('open');
-      root.setAttribute('aria-expanded','false');
-      btn.setAttribute('aria-expanded','false');
-    }
-
-    btn.addEventListener('click', () => {
-      const isOpen = menu.classList.contains('open');
-      isOpen ? close() : open();
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!root.contains(e.target)) close();
-    });
-
-    // keyboard basics
-    btn.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); }
-      if (e.key === 'Escape') close();
-    });
-
-    // Set default (optional)
-    if (defaultId) {
-      const t = TEAMS.find(x => x.id === defaultId);
-      if (t) selectTeam(t);
-    } else {
-      // blank state
-      img.src = '';
-      nameSpan.textContent = 'Select team…';
-      hidden.value = '';
-    }
-
-    return { selectTeam };
+    select.addEventListener("change", sync);
+    sync();
   }
-
-  // ===== Init both selectors =====
-  const homeSel = initTeamSelect('homeTeamSelect', 'homeTeam', /*defaultId*/ null);
-  const awaySel = initTeamSelect('awayTeamSelect', 'awayTeam', /*defaultId*/ null);
-
-  // If your app previously listened to #homeTeam/#awayTeam <select> change events,
-  // the hidden inputs keep that intact. Example:
-  document.getElementById('homeTeam').addEventListener('change', () => {
-    // read selected: document.getElementById('homeTeam').value
-    // call your model/update function here if needed
-  });
-  document.getElementById('awayTeam').addEventListener('change', () => {
-    // ...
-  });
+  document.querySelectorAll("select.team-native").forEach(enhance);
+})();
 </script>
+
+</body>
+</html>
