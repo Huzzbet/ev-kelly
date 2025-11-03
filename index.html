@@ -32,9 +32,14 @@
   pre{white-space:pre-wrap}
   kbd{background:#222;border:1px solid #333;border-bottom-color:#222;border-radius:.35rem;padding:.08rem .35rem}
   .num{font-variant-numeric:tabular-nums}
-  /* Game list */
+
+  /* Game list & logos */
   .games-toolbar{position:sticky;top:0;z-index:5;background:linear-gradient(#0c0c0c,#0c0c0c);padding:.5rem .4rem .6rem;border-bottom:1px solid #222;border-radius:.75rem}
-  .game-card{display:grid;grid-template-columns:1fr auto;gap:.6rem;padding:.9rem;border:1px solid #2b2b2b;border-radius:.8rem;background:#141414}
+  .game-card{display:grid;grid-template-columns:1fr auto;gap:.6rem;padding:.9rem;border:1px solid #2b2b2b;border-radius:.8rem;background:#141414;cursor:pointer}
+  .game-left{display:flex;gap:.75rem;align-items:center}
+  .badge{width:40px;height:40px;border-radius:8px;border:1px solid #2b2b2b;background:#0f0f0f;display:grid;place-items:center;overflow:hidden}
+  .badge img{width:36px;height:36px;object-fit:contain;image-rendering:-webkit-optimize-contrast}
+  .badge svg{display:block}
   .game-meta{display:flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center}
   .pill{display:inline-flex;align-items:center;gap:.35rem;border:1px solid #2f2f2f;border-radius:999px;padding:.20rem .55rem;background:#1a1a1a;font-size:.85rem}
   .team{font-weight:700}
@@ -42,13 +47,19 @@
   .score{font-weight:700}
   .game-actions{display:flex;gap:.45rem;align-items:center}
   .link{cursor:pointer;text-decoration:underline;color:#aee9ff}
+
+  /* Calculator header with logos */
+  .matchup-header{display:flex;align-items:center;gap:1rem;margin:.5rem 0 0}
+  .matchup-item{display:flex;align-items:center;gap:.6rem}
+  .matchup-name{font-weight:700}
+  .at{opacity:.7}
 </style>
 </head>
 <body>
 
 <main class="tab-views">
 
-  <!-- ================= CALCULATOR ================= -->
+  <!-- ============== CALCULATOR ============== -->
   <section id="tab-calculator" class="tab-view is-active" aria-labelledby="btn-calculator">
 
     <div class="card">
@@ -61,6 +72,13 @@
         <input id="awayTeam" list="teamList" placeholder="Perth Wildcats"/>
       </div>
       <datalist id="teamList"></datalist>
+
+      <!-- logos preview -->
+      <div class="matchup-header">
+        <div class="matchup-item"><span class="badge" id="badgeHome"></span><span class="matchup-name" id="nameHome">—</span></div>
+        <span class="at">@</span>
+        <div class="matchup-item"><span class="badge" id="badgeAway"></span><span class="matchup-name" id="nameAway">—</span></div>
+      </div>
 
       <div class="row">
         <label for="recentWeight">Recent (last-5)</label>
@@ -129,7 +147,7 @@
 
   </section>
 
-  <!-- ================= EV COMPARE ================= -->
+  <!-- ============== EV COMPARE ============== -->
   <section id="tab-ev" class="tab-view" aria-labelledby="btn-ev">
     <h3>EV Compare</h3>
     <div class="card grid">
@@ -141,7 +159,7 @@ Perth Wildcats,2.10"></textarea>
     <div id="evResults"></div>
   </section>
 
-  <!-- ================= NBL DATA ================= -->
+  <!-- ============== NBL DATA ============== -->
   <section id="tab-nbl" class="tab-view" aria-labelledby="btn-nbl">
     <h3>NBL Dataset (2025/26)</h3>
     <div class="card grid">
@@ -160,7 +178,7 @@ Perth Wildcats,2.10"></textarea>
     <div id="nblPreview"></div>
   </section>
 
-  <!-- ================= HISTORY ================= -->
+  <!-- ============== HISTORY ============== -->
   <section id="tab-history" class="tab-view" aria-labelledby="btn-history">
     <h3>History</h3>
 
@@ -201,12 +219,41 @@ Perth Wildcats,2.10"></textarea>
 </nav>
 
 <script>
-/* ===================== Utilities ===================== */
+/* =============== Logo mapping =============== */
+const LOGOS = {
+  "adelaide 36ers": "assets/logos/adelaide-36ers.png",
+  "illawarra hawks": "assets/logos/illawarra-hawks.png",
+  "south east melbourne": "assets/logos/south-east-melbourne-phoenix.png",
+  "perth wildcats": "assets/logos/perth-wildcats.png",
+  "brisbane bullets": "assets/logos/brisbane-bullets.png",
+  "sydney kings": "assets/logos/sydney-kings.png",
+  "tasmania jackjumpers": "assets/logos/tasmania-jackjumpers.png",
+  "cairns taipans": "assets/logos/cairns-taipans.png",
+  "nz breakers": "assets/logos/nz-breakers.png",
+  "new zealand breakers": "assets/logos/nz-breakers.png",
+  "melbourne united": "assets/logos/melbourne-united.png"
+};
+
+// Fallback: monogram SVG → data URL
+function logoFallback(team){
+  const initials = team.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase();
+  const bg = "#18222a", fg = "#cfefff";
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'>
+    <rect rx='12' ry='12' x='1' y='1' width='70' height='70' fill='${bg}' stroke='#2b3b46'/>
+    <text x='50%' y='54%' text-anchor='middle' font-family='system-ui,Segoe UI,Roboto' font-size='28' font-weight='700' fill='${fg}'>${initials}</text>
+  </svg>`;
+  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+}
+function logoSrc(team){
+  const key = (team||'').toLowerCase().trim();
+  return LOGOS[key] || logoFallback(team||'?');
+}
+
+/* =============== Utilities / Tabs =============== */
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));
 const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
 
-/* ===================== Tabs ===================== */
 function setActiveTab(tab){
   $$('.tab-view').forEach(v => v.classList.remove('is-active'));
   const view = document.getElementById('tab-'+tab); if(view) view.classList.add('is-active');
@@ -216,8 +263,8 @@ function setActiveTab(tab){
 $$('.bottom-tabs [role="tab"]').forEach(btn => btn.addEventListener('click', ()=>setActiveTab(btn.dataset.tab)));
 setActiveTab(localStorage.getItem('activeTab') || 'calculator');
 
-/* ===================== Local DB ===================== */
-const DB_KEYS = { DATASET:'nbl_dataset_2025_26_v2', HISTORY:'bet_history_local' };
+/* =============== Local DB =============== */
+const DB_KEYS = { DATASET:'nbl_dataset_2025_26_v3', HISTORY:'bet_history_local' };
 const db = {
   getDataset(){ const s=localStorage.getItem(DB_KEYS.DATASET); return s?JSON.parse(s):null; },
   setDataset(o){ localStorage.setItem(DB_KEYS.DATASET, JSON.stringify(o)); },
@@ -228,7 +275,7 @@ const db = {
   clearHistory(){ localStorage.removeItem(DB_KEYS.HISTORY); renderHistory(); }
 };
 
-/* ===================== CSV Parser ===================== */
+/* =============== CSV Parser =============== */
 function parseCSV(text){
   const rows=[]; let row=[], field='', inQ=false;
   for(let i=0;i<text.length;i++){ const c=text[i], n=text[i+1];
@@ -247,7 +294,7 @@ function parseCSV(text){
              .map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
 }
 
-/* ===================== Dataset build ===================== */
+/* =============== Dataset build =============== */
 const datasetStatus = $('#datasetStatus');
 const nblPreview = $('#nblPreview');
 const teamList = $('#teamList');
@@ -263,6 +310,8 @@ function refreshDatasetUI(){
     nblPreview.innerHTML=''; teamList.innerHTML='';
     gameTeamFilter.innerHTML='<option value="">Filter by team</option>';
     gamesList.innerHTML = '<div class="card">Upload your CSV in the NBL tab to see games here.</div>';
+    // calculator logos cleared
+    setBadge('#badgeHome', null, '—'); setBadge('#badgeAway', null, '—');
     return;
   }
   datasetStatus.textContent = `Loaded ${ds.games.length} games • Teams: ${Object.keys(ds.teams).length} • Home win ${Math.round(ds.homeRate*100)}%`;
@@ -321,7 +370,7 @@ function buildEloRatings(games, teams, homeRate){
 }
 function eloHomeFromRate(p){ p = clamp(p, 0.5001, 0.6999); return -400*Math.log10(1/p - 1); }
 
-/* ===================== Upload & buttons ===================== */
+/* =============== Upload & buttons =============== */
 $('#fileNBL').addEventListener('change', async e=>{
   const f=e.target.files?.[0]; if(!f) return;
   const text = await f.text();
@@ -335,7 +384,7 @@ $('#fileNBL').addEventListener('change', async e=>{
 });
 $('#btn-clear-dataset').addEventListener('click', ()=>{ db.clearDataset(); refreshDatasetUI(); });
 
-/* ===================== Core stats helpers ===================== */
+/* =============== Core stats helpers =============== */
 function teamSeasonWinRate(team, ds){ const t=ds.teams[team]; return t? t.wins/Math.max(1,(t.wins+t.losses)) : 0.5; }
 function teamLast5WinRate(team, ds){ const t=ds.teams[team]; if(!t||!t.last5.length) return 0.5; return t.last5.reduce((s,x)=>s+x,0)/t.last5.length; }
 function seasonMeanTotal(team, ds){ const t=ds.teams[team]; if(!t||t.gp===0) return ds.leagueMeanTotal||175; return (t.pts_for + t.pts_against)/t.gp; }
@@ -368,11 +417,11 @@ function totalsBaselineAdvanced(home, away, ds){
   return total;
 }
 
-/* ===================== EV + Kelly ===================== */
+/* =============== EV + Kelly =============== */
 function noVigProbs(ph, pa){ if(!(ph>1 && pa>1)) return null; let sh=1/ph, sa=1/pa, sum=sh+sa; return {h: sh/sum, a: sa/sum}; }
 function kellyStake(bankroll, prob, price, frac){ const b=price-1, q=1-prob; const fStar=(b*prob - q)/b; return Math.max(0, bankroll*frac*Math.max(0,fStar)); }
 
-/* ===================== Calculator UI ===================== */
+/* =============== Calculator UI =============== */
 const homeTeam = $('#homeTeam'), awayTeam = $('#awayTeam');
 const recentWeight = $('#recentWeight'), recentVal = $('#recentWeightVal');
 const priceHome = $('#priceHome'), priceAway = $('#priceAway'), bankroll = $('#bankroll');
@@ -380,12 +429,43 @@ const kellyFrac = $('#kellyFrac'), kellyFracVal = $('#kellyFracVal'), removeVig 
 const homeWinProbEl = $('#homeWinProb'), totalsBaselineEl = $('#totalsBaseline'), homeEdgeNoteEl = $('#homeEdgeNote');
 const evBlocks = $('#evBlocks'), evHome = $('#evHome'), evAway = $('#evAway'), kHome = $('#kellyHome'), kAway = $('#kellyAway');
 
+const badgeHome = $('#badgeHome'), badgeAway = $('#badgeAway'), nameHome = $('#nameHome'), nameAway = $('#nameAway');
+
+function setBadge(sel, team, labelOverride){
+  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+  el.innerHTML = '';
+  if(!team){
+    el.innerHTML = '';
+    return;
+  }
+  const img = document.createElement('img');
+  img.src = logoSrc(team);
+  img.alt = team + ' logo';
+  img.loading = 'lazy';
+  img.onerror = ()=>{ img.src = logoFallback(team); };
+  el.appendChild(img);
+  if (labelOverride) { /* no-op here */ }
+}
+
+function updateMatchupHeader(){
+  const h = homeTeam.value?.trim();
+  const a = awayTeam.value?.trim();
+  nameHome.textContent = h || '—';
+  nameAway.textContent = a || '—';
+  setBadge(badgeHome, h || null);
+  setBadge(badgeAway, a || null);
+}
+
+homeTeam.addEventListener('input', updateMatchupHeader);
+awayTeam.addEventListener('input', updateMatchupHeader);
+
 recentWeight.addEventListener('input', ()=>{ recentVal.textContent = Number(recentWeight.value).toFixed(2); });
 kellyFrac.addEventListener('input', ()=>{ kellyFracVal.textContent = Number(kellyFrac.value).toFixed(2); });
 
 function calculateImpliedForCurrent(auto=false){
   const ds = db.getDataset();
   const h = homeTeam.value?.trim(), a = awayTeam.value?.trim();
+  updateMatchupHeader();
   if(!ds || !ds.games?.length){ if(!auto){ alert('Upload NBL data first in the NBL tab.'); setActiveTab('nbl'); } return; }
   if(!h || !a || h===a){ if(!auto){ alert('Choose two different teams.'); } return; }
   const w = Number(recentWeight.value);
@@ -418,7 +498,7 @@ function calculateImpliedForCurrent(auto=false){
 
 $('#btn-calc').addEventListener('click', ()=>calculateImpliedForCurrent(false));
 
-/* ===================== EV Compare ===================== */
+/* =============== EV Compare =============== */
 $('#btn-ev-run').addEventListener('click', ()=>{
   const ds = db.getDataset(); if(!ds){ alert('Upload NBL dataset first.'); return; }
   const lines = $('#evInput').value.trim().split('\n').filter(Boolean);
@@ -442,27 +522,24 @@ $('#btn-ev-run').addEventListener('click', ()=>{
     <div class="card">
       <div><strong>${r.name}</strong> @ ${r.price?.toFixed ? r.price.toFixed(2) : r.price}</div>
       <div>Our implied: ${r.implied!=null ? (r.implied*100).toFixed(1)+'%' : '—'}</div>
-      <div>EV vs fair: ${r.ev!=null ? (r.ev*100).toFixed(1)+'%' : '—'}</div>
+      <div>EV vs fair: ${r.ev!=null ? (r.ev*100).toFixed(1)}%</div>
     </div>
   `).join('');
 });
 
-/* ===================== Games List (History) ===================== */
+/* =============== Games List (History) =============== */
 function renderGames(){
   const ds = db.getDataset();
   if(!ds){ gamesList.innerHTML = '<div class="card">No dataset loaded.</div>'; return; }
 
-  // collect & filter
   const q = gameSearch.value.trim().toLowerCase();
   const tf = gameTeamFilter.value;
   let arr = ds.games.slice();
 
-  // sort
   arr.sort((a,b)=> sortNewestFirst
     ? b.date.localeCompare(a.date) || b.home.localeCompare(a.home)
     : a.date.localeCompare(b.date) || a.home.localeCompare(b.home));
 
-  // filter by text/team
   if (q) {
     arr = arr.filter(g =>
       g.date.includes(q) ||
@@ -474,19 +551,18 @@ function renderGames(){
   }
   if (tf) arr = arr.filter(g => g.home===tf || g.away===tf);
 
-  // render
   gamesList.innerHTML = arr.map(g => gameCardHTML(g)).join('');
 
-  // attach events
   $$('.use-in-calc').forEach(btn => {
     btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
       const {home, away} = e.currentTarget.dataset;
       applyMatchup(home, away);
     });
   });
+
   $$('.game-card').forEach(card=>{
     card.addEventListener('click', (e)=>{
-      // avoid double-trigger when clicking button
       if (e.target.closest('.game-actions')) return;
       const {home, away} = card.dataset;
       applyMatchup(home, away);
@@ -497,27 +573,30 @@ function renderGames(){
 function gameCardHTML(g){
   return `
   <div class="game-card" data-home="${g.home}" data-away="${g.away}">
-    <div>
-      <div class="game-meta">
-        <span class="pill">${g.date}</span>
-        <span class="pill"><span class="team">${g.home}</span> <span class="vs">vs</span> <span class="team">${g.away}</span></span>
-        <span class="pill score">${g.home_pts} : ${g.away_pts}</span>
-        <span class="pill">Total ${g.total}</span>
-        ${g.home_win ? '<span class="pill">Home W</span>' : '<span class="pill">Away W</span>'}
+    <div class="game-left">
+      <span class="badge"><img src="${logoSrc(g.home)}" alt="${g.home} logo" onerror="this.src='${logoFallback(g.home)}'"/></span>
+      <div>
+        <div class="game-meta">
+          <span class="pill">${g.date}</span>
+          <span class="pill"><span class="team">${g.home}</span> <span class="vs">vs</span> <span class="team">${g.away}</span></span>
+          <span class="pill score">${g.home_pts} : ${g.away_pts}</span>
+          <span class="pill">Total ${g.total}</span>
+          ${g.home_win ? '<span class="pill">Home W</span>' : '<span class="pill">Away W</span>'}
+        </div>
       </div>
     </div>
     <div class="game-actions">
+      <span class="badge"><img src="${logoSrc(g.away)}" alt="${g.away} logo" onerror="this.src='${logoFallback(g.away)}'"/></span>
       <button class="ghost use-in-calc" data-home="${g.home}" data-away="${g.away}">Use in Calculator</button>
     </div>
   </div>`;
 }
 
-// set teams → go to Calculator → auto-calc
 function applyMatchup(home, away){
   homeTeam.value = home;
   awayTeam.value = away;
+  updateMatchupHeader();
   setActiveTab('calculator');
-  // small delay to ensure tab switch paints before calc
   setTimeout(()=> calculateImpliedForCurrent(true), 0);
 }
 
@@ -529,7 +608,7 @@ $('#toggleSort').addEventListener('click', ()=>{
   renderGames();
 });
 
-/* ===================== Bet History ===================== */
+/* =============== Bet History =============== */
 function renderHistory(){
   const list = db.getHistory();
   if(!list.length){ $('#historyList').innerHTML='<div class="card">No saved bets yet.</div>'; return; }
@@ -551,9 +630,10 @@ $('#btn-export-csv').addEventListener('click', ()=>{
 });
 $('#btn-clear-history').addEventListener('click', ()=>{ if(confirm('Clear local bet history?')) db.clearHistory(); });
 
-/* ===================== Init ===================== */
+/* =============== Init =============== */
 refreshDatasetUI();
 renderHistory();
+updateMatchupHeader();
 </script>
 </body>
 </html>
