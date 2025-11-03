@@ -20,39 +20,35 @@
   input[type="text"],input[type="number"],input[list],textarea{flex:1;min-height:2.3rem;padding:.55rem .7rem;border-radius:.55rem;border:1px solid #333;background:#151515;color:#eaeaea}
   input[type="range"]{flex:1}
   input[type="checkbox"]{transform:scale(1.15)}
-  button.primary{padding:.8rem 1rem;border-radius:.65rem;border:1px solid #2f5e6b;background:#11333b;color:#e8feff;font-weight:700}
-  button.ghost{padding:.5rem .8rem;border-radius:.55rem;border:1px solid #333;background:#161616;color:#ddd}
+  button.primary{padding:.8rem 1rem;border-radius:.65rem;border:1px solid #2f5e6b;background:#11333b;color:#e8feff;font-weight:700;cursor:pointer}
+  button.ghost{padding:.5rem .8rem;border-radius:.55rem;border:1px solid #333;background:#161616;color:#ddd;cursor:pointer}
   .card{padding:.95rem;border:1px solid #333;border-radius:.75rem;margin:.8rem 0;background:#121212}
   .muted{opacity:.7}
   .grid{display:grid;gap:.8rem}
   .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
   .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
-  .grid-4{grid-template-columns:repeat(4,minmax(0,1fr))}
-  @media(max-width:820px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
-  pre{white-space:pre-wrap}
-  kbd{background:#222;border:1px solid #333;border-bottom-color:#222;border-radius:.35rem;padding:.08rem .35rem}
+  @media(max-width:820px){.grid-2,.grid-3{grid-template-columns:1fr}}
   .num{font-variant-numeric:tabular-nums}
 
   /* Game list & logos */
-  .games-toolbar{position:sticky;top:0;z-index:5;background:linear-gradient(#0c0c0c,#0c0c0c);padding:.5rem .4rem .6rem;border-bottom:1px solid #222;border-radius:.75rem}
+  .games-toolbar{position:sticky;top:0;z-index:5;background:#0c0c0c;padding:.5rem .4rem .6rem;border-bottom:1px solid #222;border-radius:.75rem}
   .game-card{display:grid;grid-template-columns:1fr auto;gap:.6rem;padding:.9rem;border:1px solid #2b2b2b;border-radius:.8rem;background:#141414;cursor:pointer}
   .game-left{display:flex;gap:.75rem;align-items:center}
   .badge{width:40px;height:40px;border-radius:8px;border:1px solid #2b2b2b;background:#0f0f0f;display:grid;place-items:center;overflow:hidden}
   .badge img{width:36px;height:36px;object-fit:contain;image-rendering:-webkit-optimize-contrast}
-  .badge svg{display:block}
   .game-meta{display:flex;flex-wrap:wrap;gap:.4rem .6rem;align-items:center}
   .pill{display:inline-flex;align-items:center;gap:.35rem;border:1px solid #2f2f2f;border-radius:999px;padding:.20rem .55rem;background:#1a1a1a;font-size:.85rem}
-  .team{font-weight:700}
-  .vs{opacity:.7}
-  .score{font-weight:700}
+  .team{font-weight:700}.vs{opacity:.7}.score{font-weight:700}
   .game-actions{display:flex;gap:.45rem;align-items:center}
-  .link{cursor:pointer;text-decoration:underline;color:#aee9ff}
 
   /* Calculator header with logos */
   .matchup-header{display:flex;align-items:center;gap:1rem;margin:.5rem 0 0}
   .matchup-item{display:flex;align-items:center;gap:.6rem}
   .matchup-name{font-weight:700}
   .at{opacity:.7}
+
+  /* error banner */
+  #err{position:fixed;left:0;right:0;bottom:4.4rem;background:#3a1111;color:#ffdede;padding:.5rem .8rem;border-top:1px solid #6a2a2a;display:none;z-index:20}
 </style>
 </head>
 <body>
@@ -61,7 +57,6 @@
 
   <!-- ============== CALCULATOR ============== -->
   <section id="tab-calculator" class="tab-view is-active" aria-labelledby="btn-calculator">
-
     <div class="card">
       <div class="row">
         <label for="homeTeam">Home</label>
@@ -73,7 +68,6 @@
       </div>
       <datalist id="teamList"></datalist>
 
-      <!-- logos preview -->
       <div class="matchup-header">
         <div class="matchup-item"><span class="badge" id="badgeHome"></span><span class="matchup-name" id="nameHome">—</span></div>
         <span class="at">@</span>
@@ -87,64 +81,32 @@
       </div>
 
       <div class="grid grid-3">
-        <div class="col">
-          <label for="priceHome">Home price</label>
-          <input id="priceHome" type="number" min="1.01" step="0.01" placeholder="1.85"/>
-        </div>
-        <div class="col">
-          <label for="priceAway">Away price</label>
-          <input id="priceAway" type="number" min="1.01" step="0.01" placeholder="2.05"/>
-        </div>
-        <div class="col">
-          <label for="bankroll">Bankroll</label>
-          <input id="bankroll" type="number" min="0" step="1" placeholder="2000"/>
-        </div>
+        <div class="col"><label for="priceHome">Home price</label><input id="priceHome" type="number" min="1.01" step="0.01" placeholder="1.85"/></div>
+        <div class="col"><label for="priceAway">Away price</label><input id="priceAway" type="number" min="1.01" step="0.01" placeholder="2.05"/></div>
+        <div class="col"><label for="bankroll">Bankroll</label><input id="bankroll" type="number" min="0" step="1" placeholder="2000"/></div>
       </div>
 
       <div class="row">
         <label for="kellyFrac">Kelly fraction</label>
         <input id="kellyFrac" type="range" min="0" max="1" step="0.05" value="0.25"/>
-        <span id="kellyFracVal">0.25</span>
-        <span class="muted">(cap Kelly to stay sane)</span>
+        <span id="kellyFracVal">0.25</span><span class="muted">(cap Kelly)</span>
       </div>
 
       <div class="row">
         <label for="removeVig">Remove vig</label>
-        <input id="removeVig" type="checkbox" checked/>
-        <span class="muted">Use both prices to de-juice before EV</span>
+        <input id="removeVig" type="checkbox" checked/><span class="muted">Use both prices to de-juice</span>
       </div>
 
       <button id="btn-calc" class="primary" style="width:100%">Calculate</button>
-      <div class="muted" style="margin-top:.5rem">
-        Model: <kbd>Empirical</kbd> ⨉ <kbd>Elo</kbd> blend + learned home edge • margin-of-victory • recency decay.
-      </div>
+      <div class="muted" style="margin-top:.5rem">Model: Empirical ⨉ Elo blend + learned home edge.</div>
     </div>
 
-    <div class="card">
-      <div><strong>Home win probability (model)</strong></div>
-      <div id="homeWinProb" class="num" style="font-size:1.25rem;margin-top:.25rem">—</div>
-      <div class="muted" id="homeEdgeNote"></div>
-    </div>
-
-    <div class="card">
-      <div><strong>Totals baseline (opponent-adjusted)</strong></div>
-      <div id="totalsBaseline" class="num" style="font-size:1.25rem;margin-top:.25rem">—</div>
-      <div class="muted">Offense vs defense with league-mean shrinkage and small pull to pace.</div>
-    </div>
-
+    <div class="card"><div><strong>Home win probability (model)</strong></div><div id="homeWinProb" class="num" style="font-size:1.25rem;margin-top:.25rem">—</div><div class="muted" id="homeEdgeNote"></div></div>
+    <div class="card"><div><strong>Totals baseline (opponent-adjusted)</strong></div><div id="totalsBaseline" class="num" style="font-size:1.25rem;margin-top:.25rem">—</div></div>
     <div class="card grid grid-2" id="evBlocks" style="display:none">
-      <div>
-        <div><strong>Home EV & Kelly</strong></div>
-        <div id="evHome" class="num" style="margin-top:.35rem">—</div>
-        <div id="kellyHome" class="num muted"></div>
-      </div>
-      <div>
-        <div><strong>Away EV & Kelly</strong></div>
-        <div id="evAway" class="num" style="margin-top:.35rem">—</div>
-        <div id="kellyAway" class="num muted"></div>
-      </div>
+      <div><div><strong>Home EV & Kelly</strong></div><div id="evHome" class="num" style="margin-top:.35rem">—</div><div id="kellyHome" class="num muted"></div></div>
+      <div><div><strong>Away EV & Kelly</strong></div><div id="evAway" class="num" style="margin-top:.35rem">—</div><div id="kellyAway" class="num muted"></div></div>
     </div>
-
   </section>
 
   <!-- ============== EV COMPARE ============== -->
@@ -168,12 +130,10 @@ Perth Wildcats,2.10"></textarea>
         <span id="datasetStatus">No dataset loaded.</span>
         <button id="btn-clear-dataset" class="ghost">Clear dataset</button>
       </div>
-      <details>
-        <summary>Sample CSV format</summary>
+      <details><summary>Sample CSV format</summary>
 <pre>date,home,away,home_pts,away_pts
 2025-10-05,Sydney Kings,Perth Wildcats,92,88
-...</pre>
-      </details>
+...</pre></details>
     </div>
     <div id="nblPreview"></div>
   </section>
@@ -181,36 +141,24 @@ Perth Wildcats,2.10"></textarea>
   <!-- ============== HISTORY ============== -->
   <section id="tab-history" class="tab-view" aria-labelledby="btn-history">
     <h3>History</h3>
-
-    <!-- GAMES LIST -->
     <div class="card">
       <div class="games-toolbar grid grid-3">
         <input id="gameSearch" type="text" placeholder="Search (team, opponent, YYYY-MM-DD)"/>
-        <select id="gameTeamFilter">
-          <option value="">Filter by team</option>
-        </select>
-        <div class="row" style="justify-content:space-between">
-          <span class="muted">Games (this season)</span>
-          <button id="toggleSort" class="ghost">Sort: newest ↓</button>
-        </div>
+        <select id="gameTeamFilter"><option value="">Filter by team</option></select>
+        <div class="row" style="justify-content:space-between"><span class="muted">Games (this season)</span><button id="toggleSort" class="ghost">Sort: newest ↓</button></div>
       </div>
       <div id="gamesList" class="grid"></div>
     </div>
 
-    <!-- BET HISTORY -->
     <div class="card row" style="justify-content:space-between">
       <div class="muted">Your saved bets (local only).</div>
-      <div class="row" style="gap:.5rem">
-        <button id="btn-export-csv" class="ghost">Export CSV</button>
-        <button id="btn-clear-history" class="ghost">Clear</button>
-      </div>
+      <div class="row" style="gap:.5rem"><button id="btn-export-csv" class="ghost">Export CSV</button><button id="btn-clear-history" class="ghost">Clear</button></div>
     </div>
     <div id="historyList" class="grid"></div>
   </section>
 
 </main>
 
-<!-- Bottom tab bar -->
 <nav class="bottom-tabs" role="tablist" aria-label="Main">
   <button id="btn-calculator" data-tab="calculator" role="tab" aria-selected="true">Calculator</button>
   <button id="btn-ev"         data-tab="ev"         role="tab" aria-selected="false">EV Compare</button>
@@ -218,422 +166,343 @@ Perth Wildcats,2.10"></textarea>
   <button id="btn-history"    data-tab="history"    role="tab" aria-selected="false">History</button>
 </nav>
 
+<div id="err"></div>
+
 <script>
-/* =============== Logo mapping =============== */
-const LOGOS = {
-  "adelaide 36ers": "assets/logos/adelaide-36ers.png",
-  "illawarra hawks": "assets/logos/illawarra-hawks.png",
-  "south east melbourne": "assets/logos/south-east-melbourne-phoenix.png",
-  "perth wildcats": "assets/logos/perth-wildcats.png",
-  "brisbane bullets": "assets/logos/brisbane-bullets.png",
-  "sydney kings": "assets/logos/sydney-kings.png",
-  "tasmania jackjumpers": "assets/logos/tasmania-jackjumpers.png",
-  "cairns taipans": "assets/logos/cairns-taipans.png",
-  "nz breakers": "assets/logos/nz-breakers.png",
-  "new zealand breakers": "assets/logos/nz-breakers.png",
-  "melbourne united": "assets/logos/melbourne-united.png"
-};
+window.addEventListener('DOMContentLoaded', () => {
+  /* ===== Error banner ===== */
+  const showErr = (msg) => { const el = document.getElementById('err'); el.textContent = '⚠️ ' + msg; el.style.display='block'; };
 
-// Fallback: monogram SVG → data URL
-function logoFallback(team){
-  const initials = team.split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase();
-  const bg = "#18222a", fg = "#cfefff";
-  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'>
-    <rect rx='12' ry='12' x='1' y='1' width='70' height='70' fill='${bg}' stroke='#2b3b46'/>
-    <text x='50%' y='54%' text-anchor='middle' font-family='system-ui,Segoe UI,Roboto' font-size='28' font-weight='700' fill='${fg}'>${initials}</text>
-  </svg>`;
-  return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
-}
-function logoSrc(team){
-  const key = (team||'').toLowerCase().trim();
-  return LOGOS[key] || logoFallback(team||'?');
-}
+  /* ===== Helpers ===== */
+  const $ = s => document.querySelector(s);
+  const $$ = s => Array.from(document.querySelectorAll(s));
+  const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
 
-/* =============== Utilities / Tabs =============== */
-const $  = s => document.querySelector(s);
-const $$ = s => Array.from(document.querySelectorAll(s));
-const clamp = (x,a,b)=>Math.max(a,Math.min(b,x));
+  /* ===== Tabs ===== */
+  function setActiveTab(tab){
+    $$('.tab-view').forEach(v => v.classList.remove('is-active'));
+    const view = document.getElementById('tab-'+tab); if(view) view.classList.add('is-active');
+    $$('.bottom-tabs [role="tab"]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab===tab)));
+    localStorage.setItem('activeTab', tab);
+  }
+  $$('.bottom-tabs [role="tab"]').forEach(btn => btn.addEventListener('click', ()=>setActiveTab(btn.dataset.tab)));
+  setActiveTab(localStorage.getItem('activeTab') || 'calculator');
 
-function setActiveTab(tab){
-  $$('.tab-view').forEach(v => v.classList.remove('is-active'));
-  const view = document.getElementById('tab-'+tab); if(view) view.classList.add('is-active');
-  $$('.bottom-tabs [role="tab"]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab===tab)));
-  localStorage.setItem('activeTab', tab);
-}
-$$('.bottom-tabs [role="tab"]').forEach(btn => btn.addEventListener('click', ()=>setActiveTab(btn.dataset.tab)));
-setActiveTab(localStorage.getItem('activeTab') || 'calculator');
+  /* ===== Logo map (relative paths for GitHub Pages) ===== */
+  const LOGOS = {
+    "adelaide 36ers":"./assets/logos/adelaide-36ers.png",
+    "illawarra hawks":"./assets/logos/illawarra-hawks.png",
+    "south east melbourne":"./assets/logos/south-east-melbourne-phoenix.png",
+    "perth wildcats":"./assets/logos/perth-wildcats.png",
+    "brisbane bullets":"./assets/logos/brisbane-bullets.png",
+    "sydney kings":"./assets/logos/sydney-kings.png",
+    "tasmania jackjumpers":"./assets/logos/tasmania-jackjumpers.png",
+    "cairns taipans":"./assets/logos/cairns-taipans.png",
+    "nz breakers":"./assets/logos/nz-breakers.png",
+    "new zealand breakers":"./assets/logos/nz-breakers.png",
+    "melbourne united":"./assets/logos/melbourne-united.png"
+  };
+  const logoFallback = (team) => {
+    const initials = (team||'?').split(/\s+/).map(w=>w[0]).join('').slice(0,3).toUpperCase();
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'>
+      <rect rx='12' ry='12' x='1' y='1' width='70' height='70' fill='#18222a' stroke='#2b3b46'/>
+      <text x='50%' y='54%' text-anchor='middle' font-family='system-ui,Segoe UI,Roboto' font-size='28' font-weight='700' fill='#cfefff'>${initials}</text>
+    </svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  };
+  const logoSrc = (team) => LOGOS[(team||'').toLowerCase().trim()] || null;
+  const putLogo = (el, team) => { if(!el) return; el.innerHTML=''; const img=document.createElement('img'); img.alt=(team||'')+' logo'; img.src=logoSrc(team)||logoFallback(team); img.onerror=()=>{img.src=logoFallback(team)}; el.appendChild(img); };
 
-/* =============== Local DB =============== */
-const DB_KEYS = { DATASET:'nbl_dataset_2025_26_v3', HISTORY:'bet_history_local' };
-const db = {
-  getDataset(){ const s=localStorage.getItem(DB_KEYS.DATASET); return s?JSON.parse(s):null; },
-  setDataset(o){ localStorage.setItem(DB_KEYS.DATASET, JSON.stringify(o)); },
-  clearDataset(){ localStorage.removeItem(DB_KEYS.DATASET); },
-  getHistory(){ const s=localStorage.getItem(DB_KEYS.HISTORY); return s?JSON.parse(s):[]; },
-  setHistory(a){ localStorage.setItem(DB_KEYS.HISTORY, JSON.stringify(a)); },
-  pushHistory(it){ const a=this.getHistory(); a.unshift(it); this.setHistory(a); renderHistory(); },
-  clearHistory(){ localStorage.removeItem(DB_KEYS.HISTORY); renderHistory(); }
-};
+  /* ===== Local DB ===== */
+  const DB_KEYS = { DATASET:'nbl_dataset_2025_26_v5', HISTORY:'bet_history_local' };
+  const db = {
+    getDataset(){ try{const s=localStorage.getItem(DB_KEYS.DATASET); return s?JSON.parse(s):null;}catch{ return null; } },
+    setDataset(o){ localStorage.setItem(DB_KEYS.DATASET, JSON.stringify(o)); },
+    clearDataset(){ localStorage.removeItem(DB_KEYS.DATASET); },
+    getHistory(){ const s=localStorage.getItem(DB_KEYS.HISTORY); return s?JSON.parse(s):[]; },
+    setHistory(a){ localStorage.setItem(DB_KEYS.HISTORY, JSON.stringify(a)); },
+    pushHistory(it){ const a=this.getHistory(); a.unshift(it); this.setHistory(a); renderHistory(); },
+    clearHistory(){ localStorage.removeItem(DB_KEYS.HISTORY); renderHistory(); }
+  };
 
-/* =============== CSV Parser =============== */
-function parseCSV(text){
-  const rows=[]; let row=[], field='', inQ=false;
-  for(let i=0;i<text.length;i++){ const c=text[i], n=text[i+1];
-    if(inQ){ if(c=='"'&&n=='"'){field+='"';i++;} else if(c=='"'){inQ=false;} else {field+=c;} }
-    else { if(c=='"'){inQ=true;}
-      else if(c==','){row.push(field);field='';}
-      else if(c=='\n'||c=='\r'){ if(field!==''||row.length){row.push(field);rows.push(row);row=[];field='';} if(c=='\r'&&n=='\n') i++; }
-      else {field+=c;}
+  /* ===== CSV parser ===== */
+  function parseCSV(text){
+    const rows=[]; let row=[], field='', inQ=false;
+    for(let i=0;i<text.length;i++){ const c=text[i], n=text[i+1];
+      if(inQ){ if(c=='"'&&n=='"'){field+='"';i++;} else if(c=='"'){inQ=false;} else {field+=c;} }
+      else { if(c=='"'){inQ=true;}
+        else if(c==','){row.push(field);field='';}
+        else if(c=='\n'||c=='\r'){ if(field!==''||row.length){row.push(field);rows.push(row);row=[];field='';} if(c=='\r'&&n=='\n') i++; }
+        else {field+=c;}
+      }
     }
+    if(field!==''||row.length){row.push(field);rows.push(row);}
+    const [hdr,...data]=rows; if(!hdr) return [];
+    const headers=hdr.map(h=>h.trim());
+    return data.filter(r=>r.length&&r.some(x=>String(x).trim().length))
+               .map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
   }
-  if(field!==''||row.length){row.push(field);rows.push(row);}
-  const [hdr,...data]=rows;
-  if(!hdr) return [];
-  const headers=hdr.map(h=>h.trim());
-  return data.filter(r=>r.length&&r.some(x=>String(x).trim().length))
-             .map(r=>Object.fromEntries(headers.map((h,i)=>[h,r[i]??''])));
-}
 
-/* =============== Dataset build =============== */
-const datasetStatus = $('#datasetStatus');
-const nblPreview = $('#nblPreview');
-const teamList = $('#teamList');
-const gameTeamFilter = $('#gameTeamFilter');
-const gamesList = $('#gamesList');
-const gameSearch = $('#gameSearch');
-let sortNewestFirst = true;
+  /* ===== Dataset build ===== */
+  const datasetStatus = $('#datasetStatus'), nblPreview = $('#nblPreview');
+  const teamList = $('#teamList'), gameTeamFilter = $('#gameTeamFilter');
+  const gamesList = $('#gamesList'), gameSearch = $('#gameSearch');
+  let sortNewestFirst = true;
 
-function refreshDatasetUI(){
-  const ds = db.getDataset();
-  if(!ds || !ds.games?.length){
-    datasetStatus.textContent = 'No dataset loaded.';
-    nblPreview.innerHTML=''; teamList.innerHTML='';
-    gameTeamFilter.innerHTML='<option value="">Filter by team</option>';
-    gamesList.innerHTML = '<div class="card">Upload your CSV in the NBL tab to see games here.</div>';
-    // calculator logos cleared
-    setBadge('#badgeHome', null, '—'); setBadge('#badgeAway', null, '—');
-    return;
-  }
-  datasetStatus.textContent = `Loaded ${ds.games.length} games • Teams: ${Object.keys(ds.teams).length} • Home win ${Math.round(ds.homeRate*100)}%`;
-  teamList.innerHTML = Object.keys(ds.teams).sort().map(t=>`<option value="${t}">`).join('');
-  gameTeamFilter.innerHTML = '<option value="">Filter by team</option>' + Object.keys(ds.teams).sort().map(t=>`<option value="${t}">${t}</option>`).join('');
-  const sample = ds.games.slice(-12).map(g=>`${g.date} — ${g.home} ${g.home_pts} : ${g.away_pts} ${g.away}`).join('<br/>');
-  nblPreview.innerHTML = `<div class="card" style="max-height:260px;overflow:auto">${sample}</div>`;
-  renderGames();
-}
-
-function buildDataset(rows){
-  const games=[];
-  const teams={};
-  const toNum=x=>x===''?null:Number(x);
-  rows.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
-  for(const r of rows){
-    const g={date:r.date, home:r.home, away:r.away, home_pts:toNum(r.home_pts), away_pts:toNum(r.away_pts)};
-    if(!(g.home && g.away && Number.isFinite(g.home_pts) && Number.isFinite(g.away_pts))) continue;
-    g.total = g.home_pts + g.away_pts;
-    g.home_win = g.home_pts > g.away_pts ? 1 : 0;
-    g.margin = (g.home_pts - g.away_pts);
-    games.push(g);
-    for(const t of [g.home,g.away]){
-      teams[t] ??= {gp:0,wins:0,losses:0,pts_for:0,pts_against:0,last5:[], off:0, def:0};
+  function refreshDatasetUI(){
+    const ds = db.getDataset();
+    if(!ds || !ds.games?.length){
+      datasetStatus && (datasetStatus.textContent='No dataset loaded.');
+      nblPreview && (nblPreview.innerHTML='');
+      teamList && (teamList.innerHTML='');
+      gameTeamFilter && (gameTeamFilter.innerHTML='<option value="">Filter by team</option>');
+      gamesList && (gamesList.innerHTML='<div class="card">Upload your CSV in the NBL tab to see games here.</div>');
+      $('#badgeHome')?.replaceChildren(); $('#badgeAway')?.replaceChildren();
+      $('#nameHome')&&( $('#nameHome').textContent='—'); $('#nameAway')&&( $('#nameAway').textContent='—');
+      return;
     }
-    const H=teams[g.home], A=teams[g.away];
-    H.gp++; A.gp++;
-    H.pts_for+=g.home_pts; H.pts_against+=g.away_pts;
-    A.pts_for+=g.away_pts; A.pts_against+=g.home_pts;
-    if(g.home_win){H.wins++;A.losses++; H.last5.push(1); A.last5.push(0);} else {H.losses++;A.wins++; H.last5.push(0);A.last5.push(1);}
+    datasetStatus.textContent = `Loaded ${ds.games.length} games • Teams: ${Object.keys(ds.teams).length} • Home win ${Math.round(ds.homeRate*100)}%`;
+    teamList.innerHTML = Object.keys(ds.teams).sort().map(t=>`<option value="${t}">`).join('');
+    gameTeamFilter.innerHTML = '<option value="">Filter by team</option>' + Object.keys(ds.teams).sort().map(t=>`<option value="${t}">${t}</option>`).join('');
+    const sample = ds.games.slice(-12).map(g=>`${g.date} — ${g.home} ${g.home_pts} : ${g.away_pts} ${g.away}`).join('<br/>');
+    nblPreview.innerHTML = `<div class="card" style="max-height:260px;overflow:auto">${sample}</div>`;
+    renderGames();
   }
-  Object.values(teams).forEach(t=> t.last5 = t.last5.slice(-5));
-  const leagueMeanTotal = games.reduce((s,g)=>s+g.total,0) / Math.max(1,games.length);
-  const homeRate = games.reduce((s,g)=>s+g.home_win,0) / Math.max(1,games.length);
-  Object.values(teams).forEach(t=>{ t.off = t.pts_for/Math.max(1,t.gp); t.def = t.pts_against/Math.max(1,t.gp); });
-  const elo = buildEloRatings(games, teams, homeRate);
-  return {games, teams, leagueMeanTotal, homeRate, elo};
-}
 
-function buildEloRatings(games, teams, homeRate){
-  const R = Object.fromEntries(Object.keys(teams).map(t=>[t,1500]));
-  const H = eloHomeFromRate(homeRate);
-  const K_BASE = 18, DECAY = 0.995;
-  const MOV_SCALE = m => Math.log(Math.max(1,Math.abs(m))+1);
-  for(const g of games){
-    const Rh = R[g.home] + H;
-    const Ra = R[g.away];
-    const expHome = 1/(1+Math.pow(10, -(Rh-Ra)/400));
-    const scoreHome = g.home_win ? 1 : 0;
-    const mov = MOV_SCALE(g.margin);
-    const K = K_BASE * mov;
-    R[g.home] = (R[g.home] + K*(scoreHome - expHome)) * (1/DECAY);
-    R[g.away] = (R[g.away] + K*((1-scoreHome) - (1-expHome))) * (1/DECAY);
-  }
-  return { ratings:R, homeElo:H };
-}
-function eloHomeFromRate(p){ p = clamp(p, 0.5001, 0.6999); return -400*Math.log10(1/p - 1); }
-
-/* =============== Upload & buttons =============== */
-$('#fileNBL').addEventListener('change', async e=>{
-  const f=e.target.files?.[0]; if(!f) return;
-  const text = await f.text();
-  let rows;
-  if(f.name.endsWith('.json')) rows = JSON.parse(text);
-  else rows = parseCSV(text);
-  const ds = buildDataset(rows);
-  db.setDataset(ds);
-  refreshDatasetUI();
-  alert('NBL dataset loaded ✅');
-});
-$('#btn-clear-dataset').addEventListener('click', ()=>{ db.clearDataset(); refreshDatasetUI(); });
-
-/* =============== Core stats helpers =============== */
-function teamSeasonWinRate(team, ds){ const t=ds.teams[team]; return t? t.wins/Math.max(1,(t.wins+t.losses)) : 0.5; }
-function teamLast5WinRate(team, ds){ const t=ds.teams[team]; if(!t||!t.last5.length) return 0.5; return t.last5.reduce((s,x)=>s+x,0)/t.last5.length; }
-function seasonMeanTotal(team, ds){ const t=ds.teams[team]; if(!t||t.gp===0) return ds.leagueMeanTotal||175; return (t.pts_for + t.pts_against)/t.gp; }
-
-function impliedHomeWinProbAdvanced(home, away, wRecent, ds){
-  if(!ds) return {p:null,pEmp:null,pElo:null,homeElo:0};
-  const homeSeason = teamSeasonWinRate(home, ds), awaySeason = 1 - teamSeasonWinRate(away, ds);
-  const homeRecent = teamLast5WinRate(home, ds), awayRecent = 1 - teamLast5WinRate(away, ds);
-  const baseSeason = (homeSeason + awaySeason)/2, baseRecent = (homeRecent + awayRecent)/2;
-  const pEmp = (1-wRecent)*baseSeason + wRecent*baseRecent;
-  const Rh = (ds.elo?.ratings?.[home] ?? 1500) + (ds.elo?.homeElo ?? 65);
-  const Ra = (ds.elo?.ratings?.[away] ?? 1500);
-  const pElo = 1/(1+Math.pow(10, -(Rh - Ra)/400));
-  const W_ELO = 0.40;
-  let p = (1-W_ELO)*pEmp + W_ELO*pElo;
-  p = clamp(p, 0.02, 0.98);
-  return { p, pEmp, pElo, homeElo: ds.elo?.homeElo ?? 65 };
-}
-
-function totalsBaselineAdvanced(home, away, ds){
-  const lm = ds.leagueMeanTotal || 175;
-  const th = ds.teams[home], ta = ds.teams[away];
-  if(!th || !ta) return lm;
-  const offH = th.off, defH = th.def, offA = ta.off, defA = ta.def;
-  const expH = (offH + defA)/2, expA = (offA + defH)/2;
-  let total = expH + expA;
-  total = 0.85*total + 0.15*lm;
-  const paceHint = (seasonMeanTotal(home,ds) + seasonMeanTotal(away,ds))/2;
-  total *= (1 + 0.01 * (paceHint - lm)/lm);
-  return total;
-}
-
-/* =============== EV + Kelly =============== */
-function noVigProbs(ph, pa){ if(!(ph>1 && pa>1)) return null; let sh=1/ph, sa=1/pa, sum=sh+sa; return {h: sh/sum, a: sa/sum}; }
-function kellyStake(bankroll, prob, price, frac){ const b=price-1, q=1-prob; const fStar=(b*prob - q)/b; return Math.max(0, bankroll*frac*Math.max(0,fStar)); }
-
-/* =============== Calculator UI =============== */
-const homeTeam = $('#homeTeam'), awayTeam = $('#awayTeam');
-const recentWeight = $('#recentWeight'), recentVal = $('#recentWeightVal');
-const priceHome = $('#priceHome'), priceAway = $('#priceAway'), bankroll = $('#bankroll');
-const kellyFrac = $('#kellyFrac'), kellyFracVal = $('#kellyFracVal'), removeVig = $('#removeVig');
-const homeWinProbEl = $('#homeWinProb'), totalsBaselineEl = $('#totalsBaseline'), homeEdgeNoteEl = $('#homeEdgeNote');
-const evBlocks = $('#evBlocks'), evHome = $('#evHome'), evAway = $('#evAway'), kHome = $('#kellyHome'), kAway = $('#kellyAway');
-
-const badgeHome = $('#badgeHome'), badgeAway = $('#badgeAway'), nameHome = $('#nameHome'), nameAway = $('#nameAway');
-
-function setBadge(sel, team, labelOverride){
-  const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
-  el.innerHTML = '';
-  if(!team){
-    el.innerHTML = '';
-    return;
-  }
-  const img = document.createElement('img');
-  img.src = logoSrc(team);
-  img.alt = team + ' logo';
-  img.loading = 'lazy';
-  img.onerror = ()=>{ img.src = logoFallback(team); };
-  el.appendChild(img);
-  if (labelOverride) { /* no-op here */ }
-}
-
-function updateMatchupHeader(){
-  const h = homeTeam.value?.trim();
-  const a = awayTeam.value?.trim();
-  nameHome.textContent = h || '—';
-  nameAway.textContent = a || '—';
-  setBadge(badgeHome, h || null);
-  setBadge(badgeAway, a || null);
-}
-
-homeTeam.addEventListener('input', updateMatchupHeader);
-awayTeam.addEventListener('input', updateMatchupHeader);
-
-recentWeight.addEventListener('input', ()=>{ recentVal.textContent = Number(recentWeight.value).toFixed(2); });
-kellyFrac.addEventListener('input', ()=>{ kellyFracVal.textContent = Number(kellyFrac.value).toFixed(2); });
-
-function calculateImpliedForCurrent(auto=false){
-  const ds = db.getDataset();
-  const h = homeTeam.value?.trim(), a = awayTeam.value?.trim();
-  updateMatchupHeader();
-  if(!ds || !ds.games?.length){ if(!auto){ alert('Upload NBL data first in the NBL tab.'); setActiveTab('nbl'); } return; }
-  if(!h || !a || h===a){ if(!auto){ alert('Choose two different teams.'); } return; }
-  const w = Number(recentWeight.value);
-  const {p, pEmp, pElo, homeElo} = impliedHomeWinProbAdvanced(h,a,w,ds);
-  const total = Math.round(totalsBaselineAdvanced(h,a,ds));
-  homeWinProbEl.textContent = (p*100).toFixed(1) + '%';
-  totalsBaselineEl.textContent = total;
-  homeEdgeNoteEl.textContent = `Empirical: ${(pEmp*100).toFixed(1)}% • Elo: ${(pElo*100).toFixed(1)}% • Home advantage ≈ ${Math.round(homeElo)} Elo`;
-
-  const ph = Number(priceHome.value), pa = Number(priceAway.value);
-  const roll = Number(bankroll.value||0), frac = Number(kellyFrac.value||0.25);
-  if(ph>1 || pa>1){
-    evBlocks.style.display='grid';
-    let pH = p, pA = 1-p;
-    if(removeVig.checked && ph>1 && pa>1){
-      const nv = noVigProbs(ph,pa);
-      if(nv){ pH = clamp(0.7*pH + 0.3*nv.h, 0.02, 0.98); pA = 1 - pH; }
+  function buildDataset(rows){
+    const games=[], teams={}; const toNum=x=>x===''?null:Number(x);
+    rows.sort((a,b)=> (a.date||'').localeCompare(b.date||''));
+    for(const r of rows){
+      const g={date:r.date, home:r.home, away:r.away, home_pts:toNum(r.home_pts), away_pts:toNum(r.away_pts)};
+      if(!(g.home && g.away && Number.isFinite(g.home_pts) && Number.isFinite(g.away_pts))) continue;
+      g.total = g.home_pts + g.away_pts; g.home_win = g.home_pts > g.away_pts ? 1 : 0; g.margin = (g.home_pts - g.away_pts);
+      games.push(g);
+      for(const t of [g.home,g.away]){ teams[t] ??= {gp:0,wins:0,losses:0,pts_for:0,pts_against:0,last5:[], off:0, def:0}; }
+      const H=teams[g.home], A=teams[g.away];
+      H.gp++; A.gp++; H.pts_for+=g.home_pts; H.pts_against+=g.away_pts; A.pts_for+=g.away_pts; A.pts_against+=g.home_pts;
+      if(g.home_win){H.wins++;A.losses++; H.last5.push(1); A.last5.push(0);} else {H.losses++;A.wins++; H.last5.push(0);A.last5.push(1);}
     }
-    const fairH = 1/pH, fairA = 1/pA;
-    const edgeH = (ph>1) ? (ph - fairH)/fairH : null;
-    const edgeA = (pa>1) ? (pa - fairA)/fairA : null;
-    evHome.textContent = ph>1 ? `Model p: ${(pH*100).toFixed(1)}% • Fair: ${fairH.toFixed(2)} • Edge: ${(edgeH*100).toFixed(1)}%` : '—';
-    evAway.textContent = pa>1 ? `Model p: ${(pA*100).toFixed(1)}% • Fair: ${fairA.toFixed(2)} • Edge: ${(edgeA*100).toFixed(1)}%` : '—';
-    kHome.textContent = ph>1 ? `Kelly stake (@${(frac*100).toFixed(0)}%): $${kellyStake(roll,pH,ph,frac).toFixed(2)}` : '';
-    kAway.textContent = pa>1 ? `Kelly stake (@${(frac*100).toFixed(0)}%): $${kellyStake(roll,pA,pa,frac).toFixed(2)}` : '';
-  } else {
-    evBlocks.style.display='none';
+    Object.values(teams).forEach(t=> t.last5 = t.last5.slice(-5));
+    const leagueMeanTotal = games.reduce((s,g)=>s+g.total,0) / Math.max(1,games.length);
+    const homeRate = games.reduce((s,g)=>s+g.home_win,0) / Math.max(1,games.length);
+    Object.values(teams).forEach(t=>{ t.off = t.pts_for/Math.max(1,t.gp); t.def = t.pts_against/Math.max(1,t.gp); });
+    const elo = buildEloRatings(games, teams, homeRate);
+    return {games, teams, leagueMeanTotal, homeRate, elo};
   }
-}
-
-$('#btn-calc').addEventListener('click', ()=>calculateImpliedForCurrent(false));
-
-/* =============== EV Compare =============== */
-$('#btn-ev-run').addEventListener('click', ()=>{
-  const ds = db.getDataset(); if(!ds){ alert('Upload NBL dataset first.'); return; }
-  const lines = $('#evInput').value.trim().split('\n').filter(Boolean);
-  if(!lines.length){ $('#evResults').textContent='Paste lines like: Team,1.80'; return; }
-  const h = homeTeam.value?.trim(), a = awayTeam.value?.trim(), w = Number(recentWeight.value);
-  const calc = (h&&a) ? impliedHomeWinProbAdvanced(h,a,w,ds).p : null;
-  const rows = lines.map(line=>{
-    const [name, priceStr] = line.split(',').map(s=>s.trim());
-    const price = Number(priceStr);
-    if(!(price>1)) return {name, price, implied:null, ev:null};
-    let implied = null;
-    if(calc!==null){
-      if(name.toLowerCase().includes((h||'').toLowerCase())) implied = calc;
-      else if(name.toLowerCase().includes((a||'').toLowerCase())) implied = 1-calc;
+  function buildEloRatings(games, teams, homeRate){
+    const R = Object.fromEntries(Object.keys(teams).map(t=>[t,1500]));
+    const H = eloHomeFromRate(homeRate);
+    const K_BASE = 18, DECAY = 0.995;
+    const MOV_SCALE = m => Math.log(Math.max(1,Math.abs(m))+1);
+    for(const g of games){
+      const Rh = R[g.home] + H, Ra = R[g.away];
+      const expHome = 1/(1+Math.pow(10, -(Rh-Ra)/400));
+      const scoreHome = g.home_win ? 1 : 0;
+      const mov = MOV_SCALE(g.margin), K = K_BASE * mov;
+      R[g.home] = (R[g.home] + K*(scoreHome - expHome)) * (1/DECAY);
+      R[g.away] = (R[g.away] + K*((1-scoreHome) - (1-expHome))) * (1/DECAY);
     }
-    if(implied===null){ implied = teamSeasonWinRate(name, ds) || 0.5; }
-    const fair = 1/implied, edge = (price - fair)/fair;
-    return {name, price, implied, ev:edge};
+    return { ratings:R, homeElo:H };
+  }
+  function eloHomeFromRate(p){ p = Math.max(0.5001, Math.min(0.6999, p)); return -400*Math.log10(1/p - 1); }
+
+  /* ===== Upload ===== */
+  $('#fileNBL')?.addEventListener('change', async e=>{
+    try{
+      const f=e.target.files?.[0]; if(!f) return;
+      const text = await f.text();
+      const rows = f.name.endsWith('.json') ? JSON.parse(text) : parseCSV(text);
+      const ds = buildDataset(rows); db.setDataset(ds); refreshDatasetUI(); alert('NBL dataset loaded ✅');
+    }catch(err){ showErr(err.message||'Upload failed'); }
   });
-  $('#evResults').innerHTML = rows.map(r=>`
-    <div class="card">
-      <div><strong>${r.name}</strong> @ ${r.price?.toFixed ? r.price.toFixed(2) : r.price}</div>
-      <div>Our implied: ${r.implied!=null ? (r.implied*100).toFixed(1)+'%' : '—'}</div>
-      <div>EV vs fair: ${r.ev!=null ? (r.ev*100).toFixed(1)}%</div>
-    </div>
-  `).join('');
-});
+  $('#btn-clear-dataset')?.addEventListener('click', ()=>{ db.clearDataset(); refreshDatasetUI(); });
 
-/* =============== Games List (History) =============== */
-function renderGames(){
-  const ds = db.getDataset();
-  if(!ds){ gamesList.innerHTML = '<div class="card">No dataset loaded.</div>'; return; }
+  /* ===== Stats helpers ===== */
+  function teamSeasonWinRate(team, ds){ const t=ds.teams[team]; return t? t.wins/Math.max(1,(t.wins+t.losses)) : 0.5; }
+  function teamLast5WinRate(team, ds){ const t=ds.teams[team]; if(!t||!t.last5.length) return 0.5; return t.last5.reduce((s,x)=>s+x,0)/t.last5.length; }
+  function seasonMeanTotal(team, ds){ const t=ds.teams[team]; if(!t||t.gp===0) return ds.leagueMeanTotal||175; return (t.pts_for + t.pts_against)/t.gp; }
 
-  const q = gameSearch.value.trim().toLowerCase();
-  const tf = gameTeamFilter.value;
-  let arr = ds.games.slice();
-
-  arr.sort((a,b)=> sortNewestFirst
-    ? b.date.localeCompare(a.date) || b.home.localeCompare(a.home)
-    : a.date.localeCompare(b.date) || a.home.localeCompare(b.home));
-
-  if (q) {
-    arr = arr.filter(g =>
-      g.date.includes(q) ||
-      g.home.toLowerCase().includes(q) ||
-      g.away.toLowerCase().includes(q) ||
-      String(g.home_pts).includes(q) ||
-      String(g.away_pts).includes(q)
-    );
+  function impliedHomeWinProbAdvanced(home, away, wRecent, ds){
+    if(!ds) return {p:null,pEmp:null,pElo:null,homeElo:0};
+    const homeSeason = teamSeasonWinRate(home, ds), awaySeason = 1 - teamSeasonWinRate(away, ds);
+    const homeRecent = teamLast5WinRate(home, ds), awayRecent = 1 - teamLast5WinRate(away, ds);
+    const baseSeason = (homeSeason + awaySeason)/2, baseRecent = (homeRecent + awayRecent)/2;
+    const pEmp = (1-wRecent)*baseSeason + wRecent*baseRecent;
+    const Rh = (ds.elo?.ratings?.[home] ?? 1500) + (ds.elo?.homeElo ?? 65);
+    const Ra = (ds.elo?.ratings?.[away] ?? 1500);
+    const pElo = 1/(1+Math.pow(10, -(Rh - Ra)/400));
+    const W_ELO = 0.40;
+    let p = (1-W_ELO)*pEmp + W_ELO*pElo;
+    p = clamp(p, 0.02, 0.98);
+    return { p, pEmp, pElo, homeElo: ds.elo?.homeElo ?? 65 };
   }
-  if (tf) arr = arr.filter(g => g.home===tf || g.away===tf);
+  function totalsBaselineAdvanced(home, away, ds){
+    const lm = ds.leagueMeanTotal || 175;
+    const th = ds.teams[home], ta = ds.teams[away];
+    if(!th || !ta) return lm;
+    const offH = th.off, defH = th.def, offA = ta.off, defA = ta.def;
+    let total = (offH + defA)/2 + (offA + defH)/2;
+    total = 0.85*total + 0.15*lm;
+    const paceHint = (seasonMeanTotal(home,ds) + seasonMeanTotal(away,ds))/2;
+    total *= (1 + 0.01 * (paceHint - lm)/lm);
+    return total;
+  }
 
-  gamesList.innerHTML = arr.map(g => gameCardHTML(g)).join('');
+  /* ===== Calculator ===== */
+  const homeTeam = $('#homeTeam'), awayTeam = $('#awayTeam');
+  const recentWeight = $('#recentWeight'), recentVal = $('#recentWeightVal');
+  const priceHome = $('#priceHome'), priceAway = $('#priceAway'), bankroll = $('#bankroll');
+  const kellyFrac = $('#kellyFrac'), kellyFracVal = $('#kellyFracVal'), removeVig = $('#removeVig');
+  const homeWinProbEl = $('#homeWinProb'), totalsBaselineEl = $('#totalsBaseline'), homeEdgeNoteEl = $('#homeEdgeNote');
+  const evBlocks = $('#evBlocks'), evHome = $('#evHome'), evAway = $('#evAway'), kHome = $('#kellyHome'), kAway = $('#kellyAway');
+  const badgeHome = $('#badgeHome'), badgeAway = $('#badgeAway'), nameHome = $('#nameHome'), nameAway = $('#nameAway');
 
-  $$('.use-in-calc').forEach(btn => {
-    btn.addEventListener('click', (e)=>{
-      e.stopPropagation();
-      const {home, away} = e.currentTarget.dataset;
-      applyMatchup(home, away);
+  function updateMatchupHeader(){
+    const h = homeTeam?.value?.trim(), a = awayTeam?.value?.trim();
+    if(nameHome) nameHome.textContent = h || '—';
+    if(nameAway) nameAway.textContent = a || '—';
+    if(h) putLogo(badgeHome, h); else badgeHome?.replaceChildren();
+    if(a) putLogo(badgeAway, a); else badgeAway?.replaceChildren();
+  }
+  recentWeight?.addEventListener('input', ()=>{ recentVal.textContent = Number(recentWeight.value).toFixed(2); });
+  kellyFrac?.addEventListener('input', ()=>{ kellyFracVal.textContent = Number(kellyFrac.value).toFixed(2); });
+  homeTeam?.addEventListener('input', updateMatchupHeader);
+  awayTeam?.addEventListener('input', updateMatchupHeader);
+
+  function noVigProbs(ph, pa){ if(!(ph>1 && pa>1)) return null; const sh=1/ph, sa=1/pa, sum=sh+sa; return {h: sh/sum, a: sa/sum}; }
+  function kellyStake(bankroll, prob, price, frac){ const b=price-1, q=1-prob; const fStar=(b*prob - q)/b; return Math.max(0, bankroll*frac*Math.max(0,fStar)); }
+
+  function calculateImpliedForCurrent(auto=false){
+    try{
+      const ds = db.getDataset();
+      const h = homeTeam?.value?.trim(), a = awayTeam?.value?.trim();
+      updateMatchupHeader();
+      if(!ds || !ds.games?.length){ if(!auto){ alert('Upload NBL data first in the NBL tab.'); setActiveTab('nbl'); } return; }
+      if(!h || !a || h===a){ if(!auto){ alert('Choose two different teams.'); } return; }
+      const w = Number(recentWeight.value);
+      const {p, pEmp, pElo, homeElo} = impliedHomeWinProbAdvanced(h,a,w,ds);
+      const total = Math.round(totalsBaselineAdvanced(h,a,ds));
+      homeWinProbEl.textContent = (p*100).toFixed(1) + '%';
+      totalsBaselineEl.textContent = total;
+      homeEdgeNoteEl.textContent = `Empirical: ${(pEmp*100).toFixed(1)}% • Elo: ${(pElo*100).toFixed(1)}% • Home advantage ≈ ${Math.round(homeElo)} Elo`;
+
+      const ph = Number(priceHome.value), pa = Number(priceAway.value);
+      const roll = Number(bankroll.value||0), frac = Number(kellyFrac.value||0.25);
+      if(ph>1 || pa>1){
+        evBlocks.style.display='grid';
+        let pH = p, pA = 1-p;
+        if(removeVig.checked && ph>1 && pa>1){
+          const nv = noVigProbs(ph,pa);
+          if(nv){ pH = clamp(0.7*pH + 0.3*nv.h, 0.02, 0.98); pA = 1 - pH; }
+        }
+        const fairH = 1/pH, fairA = 1/pA;
+        const edgeH = (ph>1) ? (ph - fairH)/fairH : null;
+        const edgeA = (pa>1) ? (pa - fairA)/fairA : null;
+        evHome.textContent = ph>1 ? `Model p: ${(pH*100).toFixed(1)}% • Fair: ${fairH.toFixed(2)} • Edge: ${(edgeH*100).toFixed(1)}%` : '—';
+        evAway.textContent = pa>1 ? `Model p: ${(pA*100).toFixed(1)}% • Fair: ${fairA.toFixed(2)} • Edge: ${(edgeA*100).toFixed(1)}%` : '—';
+        kHome.textContent = ph>1 ? `Kelly stake (@${(frac*100).toFixed(0)}%): $${kellyStake(roll,pH,ph,frac).toFixed(2)}` : '';
+        kAway.textContent = pa>1 ? `Kelly stake (@${(frac*100).toFixed(0)}%): $${kellyStake(roll,pA,pa,frac).toFixed(2)}` : '';
+      } else { evBlocks.style.display='none'; }
+    }catch(e){ showErr(e.message); }
+  }
+  $('#btn-calc')?.addEventListener('click', ()=>calculateImpliedForCurrent(false));
+
+  /* ===== EV Compare ===== */
+  $('#btn-ev-run')?.addEventListener('click', ()=>{
+    const ds = db.getDataset(); if(!ds){ alert('Upload NBL dataset first.'); return; }
+    const lines = ($('#evInput')?.value||'').trim().split('\n').filter(Boolean);
+    if(!lines.length){ $('#evResults').textContent='Paste lines like: Team,1.80'; return; }
+    const h = homeTeam?.value?.trim(), a = awayTeam?.value?.trim(), w = Number(recentWeight.value);
+    const calc = (h&&a) ? impliedHomeWinProbAdvanced(h,a,w,ds).p : null;
+    const rows = lines.map(line=>{
+      const [name, priceStr] = line.split(',').map(s=>s.trim()); const price = Number(priceStr);
+      if(!(price>1)) return {name, price, implied:null, ev:null};
+      let implied = null;
+      if(calc!==null){
+        if(name.toLowerCase().includes((h||'').toLowerCase())) implied = calc;
+        else if(name.toLowerCase().includes((a||'').toLowerCase())) implied = 1-calc;
+      }
+      if(implied===null){ implied = (ds.teams[name]?.wins ?? 0)/Math.max(1,(ds.teams[name]?.wins ?? 0)+(ds.teams[name]?.losses ?? 0)) || 0.5; }
+      const fair = 1/implied, edge = (price - fair)/fair;
+      return {name, price, implied, ev:edge};
     });
+    $('#evResults').innerHTML = rows.map(r=>`
+      <div class="card">
+        <div><strong>${r.name}</strong> @ ${r.price?.toFixed ? r.price.toFixed(2) : r.price}</div>
+        <div>Our implied: ${r.implied!=null ? (r.implied*100).toFixed(1)+'%' : '—'}</div>
+        <div>EV vs fair: ${r.ev!=null ? (r.ev*100).toFixed(1)}%</div>
+      </div>`).join('');
   });
 
-  $$('.game-card').forEach(card=>{
-    card.addEventListener('click', (e)=>{
-      if (e.target.closest('.game-actions')) return;
-      const {home, away} = card.dataset;
-      applyMatchup(home, away);
-    });
-  });
-}
-
-function gameCardHTML(g){
-  return `
-  <div class="game-card" data-home="${g.home}" data-away="${g.away}">
-    <div class="game-left">
-      <span class="badge"><img src="${logoSrc(g.home)}" alt="${g.home} logo" onerror="this.src='${logoFallback(g.home)}'"/></span>
-      <div>
-        <div class="game-meta">
-          <span class="pill">${g.date}</span>
-          <span class="pill"><span class="team">${g.home}</span> <span class="vs">vs</span> <span class="team">${g.away}</span></span>
-          <span class="pill score">${g.home_pts} : ${g.away_pts}</span>
-          <span class="pill">Total ${g.total}</span>
-          ${g.home_win ? '<span class="pill">Home W</span>' : '<span class="pill">Away W</span>'}
+  /* ===== Games list ===== */
+  function renderGames(){
+    const ds = db.getDataset();
+    if(!ds){ gamesList && (gamesList.innerHTML='<div class="card">No dataset loaded.</div>'); return; }
+    const q = gameSearch?.value?.trim().toLowerCase() || '';
+    const tf = gameTeamFilter?.value || '';
+    let arr = ds.games.slice();
+    arr.sort((a,b)=> sortNewestFirst ? b.date.localeCompare(a.date) || b.home.localeCompare(a.home)
+                                     : a.date.localeCompare(b.date) || a.home.localeCompare(b.home));
+    if (q) arr = arr.filter(g => g.date.includes(q) || g.home.toLowerCase().includes(q) || g.away.toLowerCase().includes(q) || String(g.home_pts).includes(q) || String(g.away_pts).includes(q));
+    if (tf) arr = arr.filter(g => g.home===tf || g.away===tf);
+    gamesList.innerHTML = arr.map(g => gameCardHTML(g)).join('');
+    $$('.use-in-calc').forEach(btn => btn.addEventListener('click', (e)=>{ e.stopPropagation(); applyMatchup(btn.dataset.home, btn.dataset.away); }));
+    $$('.game-card').forEach(card => card.addEventListener('click', (e)=>{ if(!e.target.closest('.game-actions')) applyMatchup(card.dataset.home, card.dataset.away); }));
+  }
+  function gameCardHTML(g){
+    const homeLogo = logoSrc(g.home) || logoFallback(g.home);
+    const awayLogo = logoSrc(g.away) || logoFallback(g.away);
+    return `
+    <div class="game-card" data-home="${g.home}" data-away="${g.away}">
+      <div class="game-left">
+        <span class="badge"><img src="${homeLogo}" alt="${g.home} logo"/></span>
+        <div>
+          <div class="game-meta">
+            <span class="pill">${g.date}</span>
+            <span class="pill"><span class="team">${g.home}</span> <span class="vs">vs</span> <span class="team">${g.away}</span></span>
+            <span class="pill score">${g.home_pts} : ${g.away_pts}</span>
+            <span class="pill">Total ${g.total}</span>
+            ${g.home_win ? '<span class="pill">Home W</span>' : '<span class="pill">Away W</span>'}
+          </div>
         </div>
       </div>
-    </div>
-    <div class="game-actions">
-      <span class="badge"><img src="${logoSrc(g.away)}" alt="${g.away} logo" onerror="this.src='${logoFallback(g.away)}'"/></span>
-      <button class="ghost use-in-calc" data-home="${g.home}" data-away="${g.away}">Use in Calculator</button>
-    </div>
-  </div>`;
-}
+      <div class="game-actions">
+        <span class="badge"><img src="${awayLogo}" alt="${g.away} logo"/></span>
+        <button class="ghost use-in-calc" data-home="${g.home}" data-away="${g.away}">Use in Calculator</button>
+      </div>
+    </div>`;
+  }
+  function applyMatchup(home, away){
+    if(homeTeam) homeTeam.value = home;
+    if(awayTeam) awayTeam.value = away;
+    updateMatchupHeader();
+    setActiveTab('calculator');
+    setTimeout(()=> $('#btn-calc') && $('#btn-calc').click(), 0);
+  }
+  gameSearch?.addEventListener('input', renderGames);
+  gameTeamFilter?.addEventListener('change', renderGames);
+  $('#toggleSort')?.addEventListener('click', ()=>{ sortNewestFirst=!sortNewestFirst; $('#toggleSort').textContent = sortNewestFirst ? 'Sort: newest ↓' : 'Sort: oldest ↑'; renderGames(); });
 
-function applyMatchup(home, away){
-  homeTeam.value = home;
-  awayTeam.value = away;
+  /* ===== Bet history ===== */
+  function renderHistory(){
+    const list = db.getHistory();
+    $('#historyList').innerHTML = !list.length ? '<div class="card">No saved bets yet.</div>' :
+      list.map(it=>`<div class="card"><div><strong>${it.market}</strong> • ${it.selection}</div><div>Stake: $${it.stake} • Price: ${it.price}</div><div>Implied p: ${(it.implied*100).toFixed(1)}% • EV: ${(it.ev*100).toFixed(1)}%</div><div class="muted">${new Date(it.ts).toLocaleString()}</div></div>`).join('');
+  }
+  $('#btn-export-csv')?.addEventListener('click', ()=>{
+    const rows = db.getHistory();
+    const hdr = 'ts,market,selection,stake,price,implied,ev\n';
+    const body = rows.map(r=>[r.ts,r.market,r.selection,r.stake,r.price,r.implied,r.ev].join(',')).join('\n');
+    const blob=new Blob([hdr+body],{type:'text/csv'}); const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='bet_history.csv'; a.click();
+  });
+  $('#btn-clear-history')?.addEventListener('click', ()=>{ if(confirm('Clear local bet history?')) db.clearHistory(); });
+
+  /* ===== Init ===== */
+  refreshDatasetUI();
+  renderHistory();
   updateMatchupHeader();
-  setActiveTab('calculator');
-  setTimeout(()=> calculateImpliedForCurrent(true), 0);
-}
-
-gameSearch.addEventListener('input', ()=>renderGames());
-gameTeamFilter.addEventListener('change', ()=>renderGames());
-$('#toggleSort').addEventListener('click', ()=>{
-  sortNewestFirst = !sortNewestFirst;
-  $('#toggleSort').textContent = sortNewestFirst ? 'Sort: newest ↓' : 'Sort: oldest ↑';
-  renderGames();
 });
-
-/* =============== Bet History =============== */
-function renderHistory(){
-  const list = db.getHistory();
-  if(!list.length){ $('#historyList').innerHTML='<div class="card">No saved bets yet.</div>'; return; }
-  $('#historyList').innerHTML = list.map(it=>`
-    <div class="card">
-      <div><strong>${it.market}</strong> • ${it.selection}</div>
-      <div>Stake: $${it.stake} • Price: ${it.price}</div>
-      <div>Implied p: ${(it.implied*100).toFixed(1)}% • EV: ${(it.ev*100).toFixed(1)}%</div>
-      <div class="muted">${new Date(it.ts).toLocaleString()}</div>
-    </div>
-  `).join('');
-}
-$('#btn-export-csv').addEventListener('click', ()=>{
-  const rows = db.getHistory();
-  const hdr = 'ts,market,selection,stake,price,implied,ev\n';
-  const body = rows.map(r=>[r.ts,r.market,r.selection,r.stake,r.price,r.implied,r.ev].join(',')).join('\n');
-  const blob=new Blob([hdr+body],{type:'text/csv'}); const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob); a.download='bet_history.csv'; a.click();
-});
-$('#btn-clear-history').addEventListener('click', ()=>{ if(confirm('Clear local bet history?')) db.clearHistory(); });
-
-/* =============== Init =============== */
-refreshDatasetUI();
-renderHistory();
-updateMatchupHeader();
 </script>
 </body>
 </html>
