@@ -1,307 +1,515 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>BetIQ — NBL History Engine (Last 5)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <style>
-    /* ---------- Base ---------- */
-    :root {
-      --bg: #0f1220;
-      --panel: #121732;
-      --muted: #94a3b8;
-      --text: #f1f5f9;
-      --line: #232a44;
-      --brand: #cbd5e1;
-      --chip: #0b1020;
-      --chip-line: #2a335a;
-      --win-bg: #16a34a22;
-      --win-br: #16a34a55;
-      --win-tx: #86efac;
-      --loss-bg: #dc262622;
-      --loss-br: #dc262655;
-      --loss-tx: #fecaca;
-    }
-    * { box-sizing: border-box; }
-    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
-    a { color: var(--brand); text-decoration: none; }
-    header { position: sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#11162a; border-bottom:1px solid var(--line); }
-    .brand { font-weight:700; letter-spacing:0.4px; }
-    nav a { margin:0 8px; color:#cbd5e1; }
-    nav a:hover { color:#fff; }
-    main { max-width:1100px; margin:24px auto; padding:0 16px; }
-    .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .muted { color:var(--muted); font-size:12px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-    .pill { background:var(--chip); border:1px solid var(--chip-line); padding:8px 10px; border-radius:999px; }
-    select, button, input[type="text"] { background:#0d1124; color:#e2e8f0; border:1px solid var(--chip-line); border-radius:8px; padding:10px 12px; }
-    button { cursor:pointer; }
-    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
-    @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } }
-    table { width:100%; border-collapse:collapse; margin-top:10px; }
-    th, td { border-bottom:1px solid var(--line); padding:10px 8px; text-align:left; }
-    .tag { display:inline-block; padding:2px 8px; border-radius:16px; font-size:12px; margin-right:6px; }
-    .tag-win { background:var(--win-bg); border:1px solid var(--win-br); color:var(--win-tx); }
-    .tag-loss { background:var(--loss-bg); border:1px solid var(--loss-br); color:var(--loss-tx); }
-    .copybox { width:100%; min-height:140px; }
-    .teamHead { display:flex; align-items:center; gap:12px; }
-    .logo { width:36px; height:36px; border-radius:6px; background:#0b1020; border:1px solid var(--chip-line); object-fit:contain; }
-    .logo.big { width:44px; height:44px; }
-    .chips { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-  </style>
+<meta charset="utf-8">
+<title>BetIQ — EV Finder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --bg:#0f1220; --panel:#121732; --line:#232a44; --text:#f1f5f9; --muted:#94a3b8;
+    --chip:#0b1020; --chip-line:#2a335a; --pos:#16a34a; --neg:#dc2626; --brand:#60a5fa;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text)}
+  header{position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#11162a;border-bottom:1px solid var(--line)}
+  .brand{font-weight:700;letter-spacing:.3px}
+  a{color:var(--brand);text-decoration:none}
+  main{max-width:1200px;margin:24px auto;padding:0 16px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:1000px){.grid{grid-template-columns:320px 1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  h2,h3{margin:6px 0 10px}
+  label{display:block;margin:6px 0 4px;color:var(--muted)}
+  input,select,button,textarea{background:#0d1124;color:#e2e8f0;border:1px solid var(--chip-line);border-radius:8px;padding:10px 12px}
+  button{cursor:pointer}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .pill{background:var(--chip);border:1px solid var(--chip-line);padding:6px 10px;border-radius:999px}
+  table{width:100%;border-collapse:collapse}
+  th,td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:left;font-size:14px}
+  th{position:sticky;top:0;background:var(--panel)}
+  .muted{color:var(--muted);font-size:12px}
+  .num{text-align:right;font-variant-numeric:tabular-nums}
+  .good{color:#86efac}
+  .bad{color:#fecaca}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+  .hl-pos{background:rgba(22,163,74,.12);border:1px solid rgba(22,163,74,.35)}
+  .hl-neg{background:rgba(220,38,38,.10);border:1px solid rgba(220,38,38,.30)}
+  .section-title{display:flex;justify-content:space-between;align-items:center}
+  .tiny{font-size:11px}
+</style>
 </head>
 <body>
-  <header>
-    <div class="brand">🏀 BetIQ — History Engine</div>
-    <nav>
-      <a href="index.html">Home</a>
-      <a href="analysis.html">Analysis</a>
-      <a href="history.html"><strong>History</strong></a>
-    </nav>
-  </header>
+<header>
+  <div class="brand">🏀 BetIQ — EV Finder</div>
+  <nav class="tiny">
+    <a href="history.html">History Engine</a>
+  </nav>
+</header>
 
-  <main>
-    <!-- Controls -->
-    <div class="card">
-      <h2 style="margin:0 0 6px;">Last Five Games Builder</h2>
-      <div class="muted">Reads <span class="mono">/data/nbl_games_2025.json</span>, computes per-team last-5, caches to <span class="mono">localStorage.lastFiveStats</span>, and renders below.</div>
-      <div class="row" style="margin-top:12px;">
-        <label class="pill">JSON path:&nbsp;<input id="jsonPath" type="text" value="data/nbl_games_2025.json" size="34"/></label>
-        <button id="reloadBtn">Reload & Compute</button>
-        <button id="copyBtn" title="Copy computed summaries as JSON">Copy JSON</button>
-      </div>
+<main class="grid">
+  <!-- LEFT: DATA + SETTINGS -->
+  <section class="card">
+    <h2>Data & Settings</h2>
+    <label>Season games JSON path</label>
+    <div class="row">
+      <input id="gamesPath" value="data/games_2025.json" size="28">
+      <button id="loadGamesBtn">Load</button>
+    </div>
+    <div class="muted mono" id="gamesInfo">No games loaded.</div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+
+    <h3>Model Parameters</h3>
+    <div class="row">
+      <label class="pill">Elo K <input id="eloK" type="number" step="1" value="20" style="width:80px;margin-left:6px"></label>
+      <label class="pill">Elo Home Adv <input id="eloH" type="number" step="1" value="60" style="width:80px;margin-left:6px"></label>
+      <label class="pill">MoV Factor <input id="movF" type="number" step="0.1" value="0.6" style="width:80px;margin-left:6px"></label>
+      <label class="pill">Spread σ (pts) <input id="sigma" type="number" step="0.1" value="12" style="width:80px;margin-left:6px"></label>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <button id="rebuildBtn">Rebuild Ratings</button>
+      <button id="resetBtn">Reset Local Data</button>
+    </div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+
+    <h3>Teams</h3>
+    <div class="muted tiny">Pulled from your games file after load.</div>
+    <div id="teamsList" class="mono tiny" style="max-height:180px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px"></div>
+
+    <hr style="border:0;border-top:1px solid var(--line);margin:12px 0">
+
+    <h3>Save/Load</h3>
+    <div class="row">
+      <button id="exportBtn">Export All</button>
+      <button id="importBtn">Import</button>
+      <input id="importFile" type="file" accept=".json" style="display:none">
+    </div>
+
+    <p class="muted tiny" style="margin-top:12px">
+      ⚠️ Responsible betting only. This tool estimates probabilities from historical data and simple models. It can be wrong. Never bet more than you can afford to lose.
+    </p>
+  </section>
+
+  <!-- RIGHT: MARKETS + EV -->
+  <section class="card">
+    <div class="section-title">
+      <h2>Markets & EV</h2>
+      <div class="tiny muted">Decimal odds. EV = p·(odds–1) – (1–p). Kelly f = (b·p – q)/b.</div>
+    </div>
+
+    <!-- MONEYLINE -->
+    <div class="card" style="padding:10px;margin-bottom:12px">
+      <h3 style="margin:4px 0 8px">Moneyline (Team Win)</h3>
       <div class="row">
-        <label>Filter team:&nbsp;
-          <select id="teamFilter">
-            <option value="">All teams</option>
-          </select>
-        </label>
-        <span class="muted">Tip: keep dates ISO (YYYY-MM-DD). Most-recent 5 by date are used.</span>
+        <select id="mlHome"></select>
+        <span class="muted">vs</span>
+        <select id="mlAway"></select>
+        <label>Home odds <input id="mlHomeOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+        <label>Away odds <input id="mlAwayOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+        <button id="addML">Add</button>
       </div>
     </div>
 
-    <!-- Output -->
-    <div id="summary" class="grid"></div>
-
-    <!-- Debug / export -->
-    <div class="card">
-      <h3 style="margin-top:0;">Export (debug)</h3>
-      <textarea id="exportBox" class="copybox mono" readonly></textarea>
+    <!-- LINE/SPREAD -->
+    <div class="card" style="padding:10px;margin-bottom:12px">
+      <h3 style="margin:4px 0 8px">Line / Spread</h3>
+      <div class="row">
+        <select id="spHome"></select>
+        <span class="muted">vs</span>
+        <select id="spAway"></select>
+        <label>Line (home – pts) <input id="spLine" type="number" step="0.5" value="-2.5" style="width:90px"></label>
+        <label>Home line odds <input id="spHomeOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+        <label>Away line odds <input id="spAwayOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+        <button id="addSP">Add</button>
+      </div>
     </div>
-  </main>
 
-  <script>
-    /* =======================
-       Team Logo Mapping
-       ======================= */
-    const TEAM_LOGO_MAP = {
-      "Adelaide 36ers": "assets/logos/adelaide-36ers.png",
-      "Brisbane Bullets": "assets/logos/brisbane-bullets.png",
-      "Cairns Taipans": "assets/logos/cairns-taipans.png",
-      "Illawarra Hawks": "assets/logos/illawarra-hawks.png",
-      "Melbourne United": "assets/logos/melbourne-united.png",
-      "NZ Breakers": "assets/logos/nz-breakers.png",
-      "Perth Wildcats": "assets/logos/perth-wildcats.png",
-      "South East Melbourne": "assets/logos/sem-phoenix.png",
-      "Sydney Kings": "assets/logos/sydney-kings.png",
-      "Tasmania JackJumpers": "assets/logos/tasmania-jackjumpers.png"
+    <!-- PLAYER PROPS -->
+    <div class="card" style="padding:10px;margin-bottom:12px">
+      <h3 style="margin:4px 0 8px">Player Props (Over/Under)</h3>
+      <div class="row">
+        <input id="ppName" placeholder="Player name" size="16">
+        <select id="ppTeam"></select>
+        <select id="ppStat">
+          <option value="Points">Points</option>
+          <option value="Rebounds">Rebounds</option>
+          <option value="Assists">Assists</option>
+          <option value="Disposals">Disposals</option>
+        </select>
+        <label>Line <input id="ppLine" type="number" step="0.5" value="18.5" style="width:80px"></label>
+        <label>Over odds <input id="ppOverOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+        <label>Under odds <input id="ppUnderOdds" type="number" step="0.01" value="1.90" style="width:90px"></label>
+      </div>
+      <div class="row" style="margin-top:6px">
+        <label class="pill">Avg <input id="ppAvg" type="number" step="0.1" value="19.8" style="width:80px;margin-left:6px"></label>
+        <label class="pill">StdDev <input id="ppSd" type="number" step="0.1" value="6.2" style="width:80px;margin-left:6px"></label>
+        <button id="addPP">Add</button>
+      </div>
+      <div class="muted tiny">Tip: Use last 10 games to set Avg/StdDev. Normal approx is used here.</div>
+    </div>
+
+    <!-- EV TABLE -->
+    <div class="card" style="padding:0">
+      <table id="evTable">
+        <thead>
+          <tr>
+            <th>Market</th><th>Selection</th><th>Model p</th><th>Odds</th><th>EV</th><th>Kelly f</th><th>Notes</th><th></th>
+          </tr>
+        </thead>
+        <tbody id="evBody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===========
+   Storage
+   =========== */
+const store = {
+  set(k,v){ localStorage.setItem(k, JSON.stringify(v)); },
+  get(k,def=null){ try{ return JSON.parse(localStorage.getItem(k)||"null") ?? def; }catch(e){ return def; } }
+};
+
+/* ===========
+   Helpers
+   =========== */
+const NORM = {
+  // Standard normal CDF via erf approximation
+  cdf(z){ return 0.5*(1+Math.erf(z/Math.SQRT2)); },
+  // Probability X > x when X~N(mu,sd)
+  over(mu,sd,x){ if(sd<=0) return (mu>x)?1:0; return 1 - NORM.cdf((x-mu)/sd); },
+  under(mu,sd,x){ if(sd<=0) return (mu<x)?1:0; return NORM.cdf((x-mu)/sd); }
+};
+
+// Logistic win prob from Elo difference
+function eloWinProb(eloA, eloB){ return 1/(1+Math.pow(10, (eloB-eloA)/400)); }
+
+// EV and Kelly for decimal odds
+function evDecimal(p, odds){
+  const b = odds - 1;
+  const q = 1 - p;
+  const ev = p*b - q; // per $1 stake
+  const k = (b>0) ? Math.max(0, Math.min(1, (b*p - q)/b)) : 0; // clamp 0..1
+  return { ev, k };
+}
+
+function fmtPct(x){ return (x*100).toFixed(1)+"%"; }
+function clsEV(x){ return x>=0 ? "good" : "bad"; }
+function rowHL(x){ return x>=0 ? "hl-pos" : "hl-neg"; }
+
+/* ===========
+   State
+   =========== */
+let games = [];          // loaded season games
+let teams = [];          // team list
+let elo = {};            // team -> rating
+let params = {};         // model params
+let markets = [];        // added markets to evaluate
+
+/* ===========
+   DOM refs
+   =========== */
+const gamesPath = document.getElementById('gamesPath');
+const loadGamesBtn = document.getElementById('loadGamesBtn');
+const gamesInfo = document.getElementById('gamesInfo');
+const teamsList = document.getElementById('teamsList');
+
+const eloK = document.getElementById('eloK');
+const eloH = document.getElementById('eloH');
+const movF = document.getElementById('movF');
+const sigma = document.getElementById('sigma');
+
+const rebuildBtn = document.getElementById('rebuildBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+const mlHome = document.getElementById('mlHome');
+const mlAway = document.getElementById('mlAway');
+const mlHomeOdds = document.getElementById('mlHomeOdds');
+const mlAwayOdds = document.getElementById('mlAwayOdds');
+const addML = document.getElementById('addML');
+
+const spHome = document.getElementById('spHome');
+const spAway = document.getElementById('spAway');
+const spLine = document.getElementById('spLine');
+const spHomeOdds = document.getElementById('spHomeOdds');
+const spAwayOdds = document.getElementById('spAwayOdds');
+const addSP = document.getElementById('addSP');
+
+const ppName = document.getElementById('ppName');
+const ppTeam = document.getElementById('ppTeam');
+const ppStat = document.getElementById('ppStat');
+const ppLine = document.getElementById('ppLine');
+const ppOverOdds = document.getElementById('ppOverOdds');
+const ppUnderOdds = document.getElementById('ppUnderOdds');
+const ppAvg = document.getElementById('ppAvg');
+const ppSd = document.getElementById('ppSd');
+const addPP = document.getElementById('addPP');
+
+const evBody = document.getElementById('evBody');
+
+const exportBtn = document.getElementById('exportBtn');
+const importBtn = document.getElementById('importBtn');
+const importFile = document.getElementById('importFile');
+
+/* ===========
+   UI helpers
+   =========== */
+function setTeamsUI(){
+  const opts = teams.map(t=>`<option>${t}</option>`).join('');
+  mlHome.innerHTML = opts; mlAway.innerHTML = opts;
+  spHome.innerHTML = opts; spAway.innerHTML = opts;
+  ppTeam.innerHTML = `<option value="">(no team)</option>` + opts;
+  teamsList.innerHTML = teams.join('\n');
+}
+
+function refreshEVTable(){
+  evBody.innerHTML = "";
+  // sort by EV desc
+  const rows = markets.slice().sort((a,b)=> (b.ev ?? -1) - (a.ev ?? -1));
+
+  rows.forEach((m,idx)=>{
+    const tr = document.createElement('tr');
+    tr.className = (m.ev ?? -1) >= 0 ? 'hl-pos' : 'hl-neg';
+    const tds = [];
+    function td(html, cls=""){ const e=document.createElement('td'); e.className=cls; e.innerHTML=html; tds.push(e); }
+    td(`<span class="mono">${m.type}</span>`);
+    td(m.label);
+    td(`<span class="num">${fmtPct(m.p||0)}</span>`);
+    td(`<span class="num">${(m.odds||0).toFixed(2)}</span>`);
+    td(`<span class="num ${clsEV(m.ev)}">${(m.ev||0).toFixed(3)}</span>`);
+    td(`<span class="num">${((m.k||0)*100).toFixed(1)}%</span>`);
+    td(`<span class="tiny muted">${m.note||""}</span>`);
+    const del = document.createElement('td');
+    const btn = document.createElement('button'); btn.textContent="✕";
+    btn.onclick=()=>{
+      const i = markets.indexOf(m);
+      if(i>=0){ markets.splice(i,1); store.set('markets',markets); refreshEVTable(); }
     };
-    function getLogoSrc(team){
-      return TEAM_LOGO_MAP[team] || "assets/logos/default.png"; // fallback image if missing
+    del.appendChild(btn);
+    tds.forEach(x=>tr.appendChild(x)); tr.appendChild(del);
+    evBody.appendChild(tr);
+  });
+}
+
+/* ===========
+   Elo builder
+   =========== */
+function buildElo(){
+  // params
+  const K = Number(eloK.value);
+  const H = Number(eloH.value);
+  const MF = Number(movF.value);
+
+  // teams
+  const set = new Set();
+  games.forEach(g=>{ set.add(g.home); set.add(g.away); });
+  teams = Array.from(set).sort();
+
+  // init
+  elo = {};
+  teams.forEach(t=> elo[t] = 1500);
+
+  // sort by date
+  const sorted = games.slice().sort((a,b)=> (a.date<b.date?-1: a.date>b.date?1:0));
+
+  // iterate
+  for(const g of sorted){
+    const A = g.home, B = g.away;
+    const Ra = elo[A] + H; // home adv
+    const Rb = elo[B];
+
+    const pa = eloWinProb(Ra, Rb);
+    const pb = 1 - pa;
+
+    const diff = (g.homeScore - g.awayScore); // margin
+    const Sa = diff>0 ? 1 : 0;
+    const Sb = 1 - Sa;
+
+    const mov = Math.max(1, Math.log(Math.abs(diff)+1)) * MF; // margin scaling
+    const Ka = K * mov, Kb = K * mov;
+
+    // update (subtract H on writeback to keep base ratings team-neutral)
+    elo[A] = (elo[A] + Ka*(Sa - pa));
+    elo[B] = (elo[B] + Kb*(Sb - pb));
+  }
+
+  // show
+  const lines = teams
+    .map(t => ({t, r: Math.round(elo[t])}))
+    .sort((a,b)=>b.r-a.r)
+    .map(x => `${x.t}: ${x.r}`)
+    .join('\n');
+
+  teamsList.innerHTML = lines;
+  setTeamsUI();
+  store.set('elo', elo);
+}
+
+/* ===========
+   Load games
+   =========== */
+async function loadGames(){
+  const path = gamesPath.value.trim();
+  const res = await fetch(path + (path.includes("?")?"&":"?") + "t=" + Date.now());
+  if(!res.ok) throw new Error("Failed to load " + path);
+  const data = await res.json();
+  // validate min schema
+  games = data.filter(g => g && g.date && g.home && g.away &&
+    Number.isFinite(g.homeScore) && Number.isFinite(g.awayScore))
+    .map(g => ({...g, date:String(g.date)}));
+  gamesInfo.textContent = `Loaded ${games.length} games from ${path}`;
+  store.set('gamesPath', path);
+  buildElo();
+}
+
+/* ===========
+   Market adders
+   =========== */
+
+// Moneyline probability from Elo with home-court added to home team
+function mlProb(home, away){
+  const H = Number(eloH.value);
+  const Ra = (elo[home] ?? 1500) + H;
+  const Rb = (elo[away] ?? 1500);
+  return eloWinProb(Ra, Rb); // prob home wins
+}
+
+document.getElementById('addML').addEventListener('click', ()=>{
+  const home = mlHome.value, away = mlAway.value;
+  if(!home || !away || home===away) return;
+  const pHome = mlProb(home, away);
+  const pAway = 1 - pHome;
+
+  const oh = Number(mlHomeOdds.value), oa = Number(mlAwayOdds.value);
+  const EH = evDecimal(pHome, oh);
+  const EA = evDecimal(pAway, oa);
+
+  markets.push({type:"ML", label:`${home} vs ${away} — ${home}`, p:pHome, odds:oh, ev:EH.ev, k:EH.k,
+                note:`Elo gap ${( (elo[home]??1500)+(Number(eloH.value)) - (elo[away]??1500) ).toFixed(0)}`});
+  markets.push({type:"ML", label:`${home} vs ${away} — ${away}`, p:pAway, odds:oa, ev:EA.ev, k:EA.k,
+                note:`Elo gap ${( (elo[away]??1500) - (elo[home]??1500)-(Number(eloH.value)) ).toFixed(0)}`});
+  store.set('markets', markets);
+  refreshEVTable();
+});
+
+// Spread probability: expected spread from Elo diff; assume Normal(spread_mu, sigma)
+function expectedSpread(home, away){
+  // Translate Elo diff to expected margin: scale factor ~ (eloDiff / 28) for basketball-ish pace
+  const H = Number(eloH.value);
+  const eloDiff = ((elo[home]??1500)+(H)) - (elo[away]??1500);
+  // Tunable: ~28 elo per point (rough heuristic). Adjust if your league differs.
+  const pts = eloDiff / 28;
+  return pts;
+}
+
+document.getElementById('addSP').addEventListener('click', ()=>{
+  const home = spHome.value, away = spAway.value;
+  if(!home || !away || home===away) return;
+
+  const mu = expectedSpread(home, away);          // model mean (home minus away)
+  const sd = Number(sigma.value);
+  const L = Number(spLine.value);                 // market line (home - L)
+  const pHomeCover = NORM.over(mu, sd, L);       // P(home - away > L)
+  const pAwayCover = 1 - pHomeCover;
+
+  const oh = Number(spHomeOdds.value), oa = Number(spAwayOdds.value);
+  const EH = evDecimal(pHomeCover, oh);
+  const EA = evDecimal(pAwayCover, oa);
+
+  markets.push({type:"LINE", label:`${home} -${Math.abs(L)} vs ${away}`, p:pHomeCover, odds:oh, ev:EH.ev, k:EH.k,
+                note:`μ=${mu.toFixed(1)}, σ=${sd}`});
+  markets.push({type:"LINE", label:`${away} +${Math.abs(L)} @ ${home}`, p:pAwayCover, odds:oa, ev:EA.ev, k:EA.k,
+                note:`μ=${mu.toFixed(1)}, σ=${sd}`});
+  store.set('markets', markets);
+  refreshEVTable();
+});
+
+// Player props: Normal approximation using Avg & StdDev input
+document.getElementById('addPP').addEventListener('click', ()=>{
+  const name = ppName.value.trim(); if(!name) return;
+  const team = ppTeam.value || "";
+  const stat = ppStat.value;
+  const line = Number(ppLine.value);
+  const avg = Number(ppAvg.value);
+  const sd  = Number(ppSd.value);
+  const oOdds = Number(ppOverOdds.value);
+  const uOdds = Number(ppUnderOdds.value);
+
+  const pOver = NORM.over(avg, sd, line);
+  const pUnder = 1 - pOver;
+  const EO = evDecimal(pOver, oOdds);
+  const EU = evDecimal(pUnder, uOdds);
+
+  markets.push({type:"PROP", label:`${name} (${team}) — Over ${line} ${stat}`, p:pOver, odds:oOdds, ev:EO.ev, k:EO.k,
+                note:`μ=${avg}, σ=${sd}`});
+  markets.push({type:"PROP", label:`${name} (${team}) — Under ${line} ${stat}`, p:pUnder, odds:uOdds, ev:EU.ev, k:EU.k,
+                note:`μ=${avg}, σ=${sd}`});
+  store.set('markets', markets);
+  refreshEVTable();
+});
+
+/* ===========
+   Save/Load UI
+   =========== */
+exportBtn.addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify({
+    gamesPath: gamesPath.value,
+    eloParams: {K:Number(eloK.value), H:Number(eloH.value), MF:Number(movF.value), sigma:Number(sigma.value)},
+    elo, markets
+  }, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'betiq_export.json';
+  a.click();
+});
+
+importBtn.addEventListener('click', ()=> importFile.click());
+importFile.addEventListener('change', async (e)=>{
+  const f = e.target.files[0]; if(!f) return;
+  const text = await f.text();
+  try{
+    const obj = JSON.parse(text);
+    if(obj.gamesPath) gamesPath.value = obj.gamesPath;
+    if(obj.eloParams){
+      eloK.value = obj.eloParams.K ?? eloK.value;
+      eloH.value = obj.eloParams.H ?? eloH.value;
+      movF.value = obj.eloParams.MF ?? movF.value;
+      sigma.value = obj.eloParams.sigma ?? sigma.value;
     }
+    if(obj.elo) elo = obj.elo;
+    if(Array.isArray(obj.markets)) markets = obj.markets;
+    store.set('markets', markets);
+    store.set('elo', elo);
+    refreshEVTable();
+    alert('Imported!');
+  }catch(err){ alert('Bad import file'); }
+});
 
-    /* =======================
-       Utilities
-       ======================= */
-    const byDateDesc = (a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+/* ===========
+   Buttons
+   =========== */
+loadGamesBtn.addEventListener('click', ()=> loadGames().catch(e=> alert(e.message)));
+rebuildBtn.addEventListener('click', ()=> { if(games.length===0){alert('Load games first');return;} buildElo(); alert('Ratings rebuilt'); });
+resetBtn.addEventListener('click', ()=>{
+  if(!confirm('Clear local data (markets, elo cache)?')) return;
+  localStorage.clear();
+  markets = [];
+  elo = {};
+  refreshEVTable();
+});
 
-    function el(tag, attrs={}, children=[]){
-      const e = document.createElement(tag);
-      for (const k in attrs){
-        if (k === "class") e.className = attrs[k];
-        else if (k === "html") e.innerHTML = attrs[k];
-        else e.setAttribute(k, attrs[k]);
-      }
-      (Array.isArray(children) ? children : [children]).forEach(c=>{
-        if (typeof c === "string") e.appendChild(document.createTextNode(c));
-        else if (c) e.appendChild(c);
-      });
-      return e;
-    }
-
-    function teamNamesFrom(games){
-      const set = new Set();
-      games.forEach(g => { set.add(g.home); set.add(g.away); });
-      return Array.from(set).sort();
-    }
-
-    function resultForTeam(game, team){
-      const isHome = game.home === team;
-      const myScore = isHome ? game.homeScore : game.awayScore;
-      const oppTeam = isHome ? game.away : game.home;
-      const oppScore = isHome ? game.awayScore : game.homeScore;
-      const res = myScore > oppScore ? "W" : "L";
-      return {
-        date: String(game.date),
-        round: game.round ?? "",
-        opponent: oppTeam,
-        location: isHome ? "H" : "A",
-        myScore, oppScore, res
-      };
-    }
-
-    function lastFiveForTeam(allGames, team){
-      const played = allGames
-        .filter(g => g.home === team || g.away === team)
-        .sort(byDateDesc)
-        .map(g => resultForTeam(g, team));
-      const last5 = played.slice(0,5);
-      const wins = last5.filter(x=>x.res==="W").length;
-      const losses = last5.length - wins;
-      const wlString = last5.map(x=>x.res).join(" ");
-      const winPct = last5.length ? Number(((wins/last5.length)*100).toFixed(1)) : 0;
-      return { team, games:last5, wins, losses, winPct, wlString };
-    }
-
-    function computeAllLastFive(allGames){
-      const teams = teamNamesFrom(allGames);
-      const map = {};
-      teams.forEach(t => map[t] = lastFiveForTeam(allGames, t));
-      return map;
-    }
-
-    function wlBadge(ch){ return el("span",{class:"tag " + (ch==="W"?"tag-win":"tag-loss")}, ch); }
-
-    function renderTeamCard(s){
-      const head = el("div", {class:"teamHead"}, [
-        el("img", {class:"logo big", src:getLogoSrc(s.team), alt:s.team + " logo"}),
-        el("div", {}, [
-          el("h3", {style:"margin:0 0 2px;"}, s.team),
-          el("div", {class:"chips"}, [
-            el("span", {class:"pill"}, `Win%: ${s.winPct}%`),
-            el("span", {class:"pill"}, `Record: ${s.wins}-${s.losses}`)
-          ])
-        ])
-      ]);
-
-      const wlRow = el("div", {class:"row"}, s.wlString.split(" ").map(wlBadge));
-
-      const tbl = el("table");
-      tbl.appendChild(el("thead", {}, el("tr",{},[
-        el("th",{}, "Date"),
-        el("th",{}, "R"),
-        el("th",{}, "Opponent"),
-        el("th",{}, "Loc"),
-        el("th",{}, "Score"),
-        el("th",{}, "Res")
-      ])));
-      const tb = el("tbody");
-      s.games.forEach(g=>{
-        tb.appendChild(el("tr",{},[
-          el("td",{}, g.date),
-          el("td",{}, String(g.round)),
-          el("td",{}, [
-            el("img", {class:"logo", src:getLogoSrc(g.opponent), alt:g.opponent + " logo", title:g.opponent}),
-            " ",
-            g.opponent
-          ]),
-          el("td",{}, g.location),
-          el("td",{}, `${g.myScore}–${g.oppScore}`),
-          el("td",{}, g.res),
-        ]));
-      });
-      tbl.appendChild(tb);
-
-      return el("div", {class:"card"}, [head, wlRow, tbl]);
-    }
-
-    /* =======================
-       Page Logic
-       ======================= */
-    const summaryDiv = document.getElementById("summary");
-    const exportBox = document.getElementById("exportBox");
-    const teamFilter = document.getElementById("teamFilter");
-    const reloadBtn = document.getElementById("reloadBtn");
-    const copyBtn = document.getElementById("copyBtn");
-    const jsonPathInput = document.getElementById("jsonPath");
-
-    let rawGames = [];
-    let summaries = {};
-
-    async function loadAndCompute(){
-      const path = jsonPathInput.value.trim();
-      const res = await fetch(path + (path.includes("?") ? "&" : "?") + "t=" + Date.now());
-      if (!res.ok){ throw new Error("Failed to load JSON at " + path); }
-      const data = await res.json();
-
-      // Validate & normalise
-      rawGames = data
-        .filter(g => g && g.date && g.home && g.away && Number.isFinite(g.homeScore) && Number.isFinite(g.awayScore))
-        .map(g => ({...g, date: String(g.date)}))
-        .sort(byDateDesc);
-
-      summaries = computeAllLastFive(rawGames);
-
-      // Cache for other pages
-      localStorage.setItem("lastFiveStats", JSON.stringify({
-        updatedAt: new Date().toISOString(),
-        source: path,
-        summaries
-      }));
-
-      render();
-      exportBox.value = JSON.stringify(summaries, null, 2);
-      populateTeamFilter();
-    }
-
-    function populateTeamFilter(){
-      const teams = Object.keys(summaries).sort();
-      const current = teamFilter.value;
-      teamFilter.innerHTML = '<option value="">All teams</option>';
-      teams.forEach(t=>{
-        const opt = document.createElement("option");
-        opt.value = t; opt.textContent = t;
-        teamFilter.appendChild(opt);
-      });
-      if (teams.includes(current)) teamFilter.value = current;
-    }
-
-    function render(){
-      summaryDiv.innerHTML = "";
-      const teams = Object.keys(summaries).sort();
-      const filt = teamFilter.value;
-      teams
-        .filter(t => !filt || t === filt)
-        .forEach(t => summaryDiv.appendChild(renderTeamCard(summaries[t])));
-    }
-
-    reloadBtn.addEventListener("click", () => {
-      loadAndCompute().catch(err => exportBox.value = "Error: " + err.message);
-    });
-    copyBtn.addEventListener("click", ()=>{
-      exportBox.select();
-      document.execCommand("copy");
-    });
-    teamFilter.addEventListener("change", render);
-
-    // Auto-run on load
-    loadAndCompute().catch(err=>{
-      exportBox.value = "Error: " + err.message + "\n\nCheck your JSON path and ensure the file exists in the repo.";
-    });
-
-    /* =======================
-       Helper for other pages
-       ======================= */
-    // After History runs, any page can call:
-    //   const stats = getLastFiveForTeam("Sydney Kings");
-    // to grab the cached summary.
-    window.getLastFiveForTeam = function(team){
-      try{
-        const store = JSON.parse(localStorage.getItem("lastFiveStats") || "{}");
-        return store.summaries?.[team] || null;
-      }catch(e){ return null; }
-    };
-  </script>
+/* ===========
+   Boot
+   =========== */
+(function init(){
+  // restore
+  gamesPath.value = store.get('gamesPath', gamesPath.value);
+  const cachedElo = store.get('elo', null); if(cachedElo) elo = cachedElo;
+  const cachedMkts = store.get('markets', []); markets = cachedMkts;
+  refreshEVTable();
+})();
+</script>
 </body>
 </html>
