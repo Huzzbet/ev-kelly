@@ -1,390 +1,307 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>SharpEdge Predictor</title>
-<style>
-  :root{--bg:#0b0e13;--panel:#171a21;--muted:#a7b0c0;--text:#e8ecf4;--brand:#4da3ff;--ok:#2ecc71;--bad:#e74c3c;}
-  html,body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;margin:0}
-  header{padding:28px 16px 8px;text-align:center}
-  h1{margin:0;font-size:32px;letter-spacing:.4px}
-  .tag{color:var(--muted);margin-top:6px}
-  .wrap{max-width:980px;margin:0 auto;padding:16px}
-  .card{background:var(--panel);border:1px solid #232838;border-radius:14px;padding:16px;margin:14px 0}
-  label{display:block;margin:8px 0 6px;color:var(--muted)}
-  select,input,button{width:100%;background:#0f1320;border:1px solid #273049;color:var(--text);padding:12px;border-radius:10px;font-size:16px;outline:none}
-  input[type="range"]{padding:0}
-  .row{display:flex;gap:12px;flex-wrap:wrap}
-  .col{flex:1 1 260px}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  .nums{font-variant-numeric:tabular-nums}
-  .muted{color:var(--muted)}
-  .small{font-size:13px}
-  .btn{cursor:pointer;background:linear-gradient(180deg,#2b67ff,#1a49c7);border:none}
-  .footer{color:#70819f;font-size:12px;margin-top:24px}
-
-  /* W/L chips */
-  .chips{display:flex;gap:6px;flex-wrap:wrap}
-  .chip{display:inline-block;padding:4px 10px;border-radius:8px;font-size:14px;color:#fff}
-  .chip.w{background:var(--ok)}
-  .chip.l{background:var(--bad)}
-  .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #2a334a;margin-right:6px;margin-top:6px}
-  .pill.ok{border-color:#1f5f44;color:var(--ok)}
-  .pill.bad{border-color:#6b2c2c;color:var(--bad)}
-
-  /* Visual form input with chips inside */
-  .form-box{background:#0f1320;border:1px solid #273049;border-radius:10px;padding:8px 8px 6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-  .form-input{flex:1;background:transparent;border:none;outline:none;color:#e8ecf4;font-size:18px;min-width:60px}
-  .form-buttons{display:flex;gap:6px;margin-top:6px}
-  .form-btn{flex:1;padding:8px;background:#1a49c7;color:white;border:none;border-radius:8px;font-size:14px;cursor:pointer}
-</style>
+  <meta charset="UTF-8" />
+  <title>BetIQ — NBL History Engine (Last 5)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    /* ---------- Base ---------- */
+    :root {
+      --bg: #0f1220;
+      --panel: #121732;
+      --muted: #94a3b8;
+      --text: #f1f5f9;
+      --line: #232a44;
+      --brand: #cbd5e1;
+      --chip: #0b1020;
+      --chip-line: #2a335a;
+      --win-bg: #16a34a22;
+      --win-br: #16a34a55;
+      --win-tx: #86efac;
+      --loss-bg: #dc262622;
+      --loss-br: #dc262655;
+      --loss-tx: #fecaca;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background:var(--bg); color:var(--text); }
+    a { color: var(--brand); text-decoration: none; }
+    header { position: sticky; top:0; z-index:10; display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#11162a; border-bottom:1px solid var(--line); }
+    .brand { font-weight:700; letter-spacing:0.4px; }
+    nav a { margin:0 8px; color:#cbd5e1; }
+    nav a:hover { color:#fff; }
+    main { max-width:1100px; margin:24px auto; padding:0 16px; }
+    .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:16px; }
+    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    .muted { color:var(--muted); font-size:12px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    .pill { background:var(--chip); border:1px solid var(--chip-line); padding:8px 10px; border-radius:999px; }
+    select, button, input[type="text"] { background:#0d1124; color:#e2e8f0; border:1px solid var(--chip-line); border-radius:8px; padding:10px 12px; }
+    button { cursor:pointer; }
+    .grid { display:grid; grid-template-columns: 1fr; gap:12px; }
+    @media (min-width: 960px) { .grid { grid-template-columns: 1fr 1fr; } }
+    table { width:100%; border-collapse:collapse; margin-top:10px; }
+    th, td { border-bottom:1px solid var(--line); padding:10px 8px; text-align:left; }
+    .tag { display:inline-block; padding:2px 8px; border-radius:16px; font-size:12px; margin-right:6px; }
+    .tag-win { background:var(--win-bg); border:1px solid var(--win-br); color:var(--win-tx); }
+    .tag-loss { background:var(--loss-bg); border:1px solid var(--loss-br); color:var(--loss-tx); }
+    .copybox { width:100%; min-height:140px; }
+    .teamHead { display:flex; align-items:center; gap:12px; }
+    .logo { width:36px; height:36px; border-radius:6px; background:#0b1020; border:1px solid var(--chip-line); object-fit:contain; }
+    .logo.big { width:44px; height:44px; }
+    .chips { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  </style>
 </head>
 <body>
+  <header>
+    <div class="brand">🏀 BetIQ — History Engine</div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="analysis.html">Analysis</a>
+      <a href="history.html"><strong>History</strong></a>
+    </nav>
+  </header>
 
-<header>
-  <h1>SharpEdge Predictor</h1>
-  <div class="tag">Find the edge. Bet smarter. Win long-term.</div>
-</header>
-
-<div class="wrap">
-
-  <!-- TEAMS + FORM -->
-  <div class="card">
-    <div class="row">
-      <div class="col">
-        <label>Home</label>
-        <select id="homeTeam"></select>
+  <main>
+    <!-- Controls -->
+    <div class="card">
+      <h2 style="margin:0 0 6px;">Last Five Games Builder</h2>
+      <div class="muted">Reads <span class="mono">/data/nbl_games_2025.json</span>, computes per-team last-5, caches to <span class="mono">localStorage.lastFiveStats</span>, and renders below.</div>
+      <div class="row" style="margin-top:12px;">
+        <label class="pill">JSON path:&nbsp;<input id="jsonPath" type="text" value="data/nbl_games_2025.json" size="34"/></label>
+        <button id="reloadBtn">Reload & Compute</button>
+        <button id="copyBtn" title="Copy computed summaries as JSON">Copy JSON</button>
       </div>
-      <div class="col">
-        <label>Away</label>
-        <select id="awayTeam"></select>
-      </div>
-    </div>
-
-    <div class="row">
-      <!-- HOME last-5 -->
-      <div class="col">
-        <label>Home last-5 (W/L)</label>
-        <div class="form-box">
-          <div id="homeFormChips" class="chips"></div>
-          <input id="homeLast5" maxlength="5" placeholder="e.g. WWLLW" class="form-input" />
-        </div>
-        <div class="form-buttons">
-          <button type="button" class="form-btn" onclick="addResult('homeLast5','W')">W</button>
-          <button type="button" class="form-btn" onclick="addResult('homeLast5','L')">L</button>
-        </div>
-        <div id="homeFormViz" class="small"></div>
-      </div>
-
-      <!-- AWAY last-5 -->
-      <div class="col">
-        <label>Away last-5 (W/L)</label>
-        <div class="form-box">
-          <div id="awayFormChips" class="chips"></div>
-          <input id="awayLast5" maxlength="5" placeholder="e.g. LWLWW" class="form-input" />
-        </div>
-        <div class="form-buttons">
-          <button type="button" class="form-btn" onclick="addResult('awayLast5','W')">W</button>
-          <button type="button" class="form-btn" onclick="addResult('awayLast5','L')">L</button>
-        </div>
-        <div id="awayFormViz" class="small"></div>
+      <div class="row">
+        <label>Filter team:&nbsp;
+          <select id="teamFilter">
+            <option value="">All teams</option>
+          </select>
+        </label>
+        <span class="muted">Tip: keep dates ISO (YYYY-MM-DD). Most-recent 5 by date are used.</span>
       </div>
     </div>
 
-    <div class="row">
-      <div class="col">
-        <label>Recent weight (last-5)</label>
-        <input type="range" id="recentWeight" min="0" max="1" step="0.01" value="0.40" />
-        <div class="small muted">Blends recent win% with a 50/50 baseline. Weight: <span id="rwVal">0.40</span></div>
-      </div>
-      <div class="col">
-        <label>Bankroll</label>
-        <input id="bankroll" type="number" value="2000" />
-      </div>
+    <!-- Output -->
+    <div id="summary" class="grid"></div>
+
+    <!-- Debug / export -->
+    <div class="card">
+      <h3 style="margin-top:0;">Export (debug)</h3>
+      <textarea id="exportBox" class="copybox mono" readonly></textarea>
     </div>
+  </main>
 
-    <div class="grid">
-      <div class="card">
-        <div class="small muted">Home model</div>
-        <div class="nums">Win%: <span id="homeWinPct">—</span> • Price est: <span id="homeModelPrice">—</span></div>
-        <label class="small muted" style="margin-top:8px;">Market price (enter from book)</label>
-        <input id="homeMarketPrice" type="number" value="1.85" step="0.01" />
-        <label class="small muted" style="margin-top:8px;">Kelly fraction cap</label>
-        <input type="range" id="kellyFrac" min="0.05" max="0.50" step="0.01" value="0.25" />
-        <div class="small muted">Using fraction: <span id="kellyVal">0.25</span></div>
-        <div style="margin-top:10px" class="nums">Edge: <span id="homeEdge">—</span> • Kelly stake: <span id="homeStake">—</span></div>
-      </div>
+  <script>
+    /* =======================
+       Team Logo Mapping
+       ======================= */
+    const TEAM_LOGO_MAP = {
+      "Adelaide 36ers": "assets/logos/adelaide-36ers.png",
+      "Brisbane Bullets": "assets/logos/brisbane-bullets.png",
+      "Cairns Taipans": "assets/logos/cairns-taipans.png",
+      "Illawarra Hawks": "assets/logos/illawarra-hawks.png",
+      "Melbourne United": "assets/logos/melbourne-united.png",
+      "NZ Breakers": "assets/logos/nz-breakers.png",
+      "Perth Wildcats": "assets/logos/perth-wildcats.png",
+      "South East Melbourne": "assets/logos/sem-phoenix.png",
+      "Sydney Kings": "assets/logos/sydney-kings.png",
+      "Tasmania JackJumpers": "assets/logos/tasmania-jackjumpers.png"
+    };
+    function getLogoSrc(team){
+      return TEAM_LOGO_MAP[team] || "assets/logos/default.png"; // fallback image if missing
+    }
 
-      <div class="card">
-        <div class="small muted">Away model</div>
-        <div class="nums">Win%: <span id="awayWinPct">—</span> • Price est: <span id="awayModelPrice">—</span></div>
-        <label class="small muted" style="margin-top:8px;">Market price (enter from book)</label>
-        <input id="awayMarketPrice" type="number" value="2.05" step="0.01" />
-        <div style="margin-top:10px" class="nums">Edge: <span id="awayEdge">—</span> • Kelly stake: <span id="awayStake">—</span></div>
-      </div>
-    </div>
-  </div>
+    /* =======================
+       Utilities
+       ======================= */
+    const byDateDesc = (a,b)=> (a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
 
-  <!-- LINE BETTING -->
-  <div class="card">
-    <h3 style="margin:0 0 8px">Line Betting (ATS)</h3>
-    <div class="row">
-      <div class="col">
-        <label>Home line (e.g., -3.5)</label>
-        <input id="homeLine" type="number" step="0.5" value="-2.5" />
-      </div>
-      <div class="col">
-        <label>Line price (decimal)</label>
-        <input id="linePrice" type="number" step="0.01" value="1.90" />
-      </div>
-    </div>
-    <div class="row">
-      <div class="col">
-        <label class="small muted">Model cover % (auto from win% heuristic; you can override)</label>
-        <input id="coverPct" type="number" step="1" value="0" />
-      </div>
-      <div class="col">
-        <label class="small muted">Heuristic aggressiveness (0.00–0.10)</label>
-        <input type="range" id="coverHeuristic" min="0" max="0.10" step="0.005" value="0.04" />
-        <div class="small muted">Current: <span id="coverHeuVal">0.04</span></div>
-      </div>
-    </div>
-    <div class="nums" style="margin-top:8px">Line EV: <span id="lineEV">—</span> • Kelly stake: <span id="lineStake">—</span></div>
-  </div>
-
-  <!-- ACTIONS -->
-  <div class="card">
-    <div class="row">
-      <div class="col">
-        <button class="btn" id="clearBtn">Clear all</button>
-      </div>
-      <div class="col">
-        <button class="btn" id="fetchOddsBtn" title="Optional: uses TheOddsAPI if you add a key in JS">Fetch market prices (optional)</button>
-      </div>
-    </div>
-    <div class="footer">
-      Enter W/L strings and market prices; the model calculates win%, fair prices, edge, and Kelly stakes.
-      Line EV uses a simple mapping from win% → cover% (tunable). For live odds, add an API key in the JS hook.
-    </div>
-  </div>
-
-</div>
-
-<script>
-/* ---------------------------- TEAMS + DEFAULT FORM --------------------------- */
-const TEAMS = [
-  "Adelaide 36ers","Brisbane Bullets","Cairns Taipans","Illawarra Hawks",
-  "Melbourne United","NZ Breakers","Perth Wildcats","South East Melbourne Phoenix",
-  "Sydney Kings","Tasmania JackJumpers"
-];
-const DEFAULT_LAST5 = {
-  "Adelaide 36ers":"WLWLW",
-  "Illawarra Hawks":"LWLWL",
-  "Perth Wildcats":"WWWWW",
-  "Sydney Kings":"LLWWW"
-};
-
-/* ------------------------------- DOM HANDLES -------------------------------- */
-const el = id => document.getElementById(id);
-const homeTeam = el('homeTeam'), awayTeam = el('awayTeam');
-const homeLast5 = el('homeLast5'), awayLast5 = el('awayLast5');
-const homeFormChips = el('homeFormChips'), awayFormChips = el('awayFormChips');
-const homeFormViz = el('homeFormViz'), awayFormViz = el('awayFormViz');
-const recentWeight = el('recentWeight'), rwVal = el('rwVal');
-const bankroll = el('bankroll'), kellyFrac = el('kellyFrac'), kellyVal = el('kellyVal');
-
-const homeWinPct = el('homeWinPct'), awayWinPct = el('awayWinPct');
-const homeModelPrice = el('homeModelPrice'), awayModelPrice = el('awayModelPrice');
-const homeMarketPrice = el('homeMarketPrice'), awayMarketPrice = el('awayMarketPrice');
-const homeEdge = el('homeEdge'), awayEdge = el('awayEdge');
-const homeStake = el('homeStake'), awayStake = el('awayStake');
-
-const homeLine = el('homeLine'), linePrice = el('linePrice');
-const coverPct = el('coverPct'), coverHeuristic = el('coverHeuristic'), coverHeuVal = el('coverHeuVal');
-const lineEV = el('lineEV'), lineStake = el('lineStake');
-const clearBtn = el('clearBtn'), fetchOddsBtn = el('fetchOddsBtn');
-
-/* -------------------------- HELPERS & CALCULATIONS -------------------------- */
-function clamp01(x){ return Math.max(0, Math.min(1, x)); }
-function wlToWinPct(str){
-  if(!str) return 0.5;
-  const s = (str.toUpperCase().match(/[WL]/g)||[]).slice(0,5);
-  if(s.length===0) return 0.5;
-  const wins = s.filter(c=>c==='W').length;
-  return wins / s.length;
-}
-function fairFromProb(p){ return p>0 ? (1/p) : Infinity; } // decimal odds
-function edgeDecimal(p, price){ return p*(price-1) - (1-p); } // EV per $1
-function kellyStake(bankroll, p, price, kcap){
-  const b = price-1, q = 1-p;
-  const frac = Math.max(0, (b*p - q)/b);
-  const capped = Math.min(frac, kcap);
-  return bankroll * capped;
-}
-function formatPct(x){ return (x*100).toFixed(1)+"%"; }
-function formatMoney(x){ return !isFinite(x) ? "—" : "$"+(Math.round(x*100)/100).toLocaleString(); }
-
-/* --------------------------- UI BUILD + SELECTIONS -------------------------- */
-function buildSelect(sel){
-  sel.innerHTML = '<option value="" disabled selected>Select a team…</option>' +
-    TEAMS.map(t=>`<option value="${t}">${t}</option>`).join('');
-  sel.addEventListener('change', ()=> {
-    const t = sel.value;
-    const input = (sel===homeTeam) ? homeLast5 : awayLast5;
-    if(DEFAULT_LAST5[t] && !input.value) input.value = DEFAULT_LAST5[t];
-    input.dispatchEvent(new Event('input')); // refresh chips + model
-    recalc();
-  }, {passive:true});
-}
-buildSelect(homeTeam); buildSelect(awayTeam);
-
-/* ---------------------- W/L CHIP VISUALS (inside inputs) -------------------- */
-function renderChips(str, target){
-  const s = (str.toUpperCase().match(/[WL]/g)||[]).slice(0,5);
-  target.innerHTML = s.map(c=>`<span class="chip ${c==='W'?'w':'l'}">${c}</span>`).join('');
-}
-function renderPills(str, target){
-  const s = (str.toUpperCase().match(/[WL]/g)||[]).slice(0,5);
-  if(s.length===0){ target.innerHTML=""; return; }
-  target.innerHTML = s.map(c => `<span class="pill ${c==='W'?'ok':'bad'}">${c}</span>`).join('');
-}
-function updateFormVisual(id, chipId, pillId){
-  const input = el(id);
-  input.value = input.value.toUpperCase().replace(/[^WL]/g,'').slice(0,5);
-  renderChips(input.value, el(chipId));
-  renderPills(input.value, el(pillId));
-}
-function addResult(id, r){
-  const input = el(id);
-  if(input.value.length < 5){
-    input.value += r;
-    input.dispatchEvent(new Event('input'));
-  }
-}
-
-/* -------------------------------- RECALC ----------------------------------- */
-function recalc(){
-  rwVal.textContent = (+recentWeight.value).toFixed(2);
-  kellyVal.textContent = (+kellyFrac.value).toFixed(2);
-  coverHeuVal.textContent = (+coverHeuristic.value).toFixed(3);
-
-  // keep visuals in sync
-  updateFormVisual('homeLast5','homeFormChips','homeFormViz');
-  updateFormVisual('awayLast5','awayFormChips','awayFormViz');
-
-  // Model win% (blend last-5 with 50/50 baseline)
-  const w = +recentWeight.value;
-  const pH_recent = wlToWinPct(homeLast5.value);
-  const pA_recent = wlToWinPct(awayLast5.value);
-
-  const pH = clamp01(w*pH_recent + (1-w)*0.5);
-  const pA = clamp01(1 - pH); // simple two-team complement
-
-  // Prices
-  const fairH = fairFromProb(pH);
-  const fairA = fairFromProb(pA);
-
-  homeWinPct.textContent = formatPct(pH);
-  awayWinPct.textContent = formatPct(pA);
-  homeModelPrice.textContent = isFinite(fairH)? fairH.toFixed(2) : "—";
-  awayModelPrice.textContent = isFinite(fairA)? fairA.toFixed(2) : "—";
-
-  // Kelly vs market
-  const br = +bankroll.value || 0;
-  const kcap = +kellyFrac.value;
-
-  const mH = +homeMarketPrice.value || 0;
-  const mA = +awayMarketPrice.value || 0;
-
-  const evH = edgeDecimal(pH, mH);
-  const evA = edgeDecimal(pA, mA);
-
-  homeEdge.textContent = (evH>=0?'+':'') + evH.toFixed(3);
-  awayEdge.textContent = (evA>=0?'+':'') + evA.toFixed(3);
-
-  homeStake.textContent = formatMoney(kellyStake(br, pH, mH, kcap));
-  awayStake.textContent = formatMoney(kellyStake(br, pA, mA, kcap));
-
-  // ----- Line EV (heuristic cover%) -----
-  const line = +homeLine.value || 0;
-  const alpha = +coverHeuristic.value; // sensitivity per point
-  let pCover = clamp01(pH + (-line) * alpha); // favourite line (-) → boost cover%
-
-  const manual = +coverPct.value;
-  if(manual>0 && manual<100) pCover = clamp01(manual/100);
-
-  const lp = +linePrice.value || 0;
-  const evLine = edgeDecimal(pCover, lp);
-  const stakeLine = kellyStake(br, pCover, lp, kcap);
-
-  lineEV.textContent = (evLine>=0?'+':'') + evLine.toFixed(3);
-  lineStake.textContent = formatMoney(stakeLine);
-}
-
-/* events */
-['input','change'].forEach(evt=>{
-  document.addEventListener(evt, e=>{
-    if([
-      'homeLast5','awayLast5','recentWeight','bankroll','kellyFrac',
-      'homeMarketPrice','awayMarketPrice','homeLine','linePrice',
-      'coverPct','coverHeuristic'
-    ].includes(e.target.id)) recalc();
-    if(e.target.id==='homeLast5') updateFormVisual('homeLast5','homeFormChips','homeFormViz');
-    if(e.target.id==='awayLast5') updateFormVisual('awayLast5','awayFormChips','awayFormViz');
-  }, {passive:true});
-});
-/* seed visuals on load */
-updateFormVisual('homeLast5','homeFormChips','homeFormViz');
-updateFormVisual('awayLast5','awayFormChips','awayFormViz');
-recalc();
-
-/* --------------------------------- ACTIONS --------------------------------- */
-clearBtn.addEventListener('click', ()=>{
-  homeTeam.selectedIndex = 0; awayTeam.selectedIndex = 0;
-  homeLast5.value=''; awayLast5.value='';
-  updateFormVisual('homeLast5','homeFormChips','homeFormViz');
-  updateFormVisual('awayLast5','awayFormChips','awayFormViz');
-  homeMarketPrice.value='1.85'; awayMarketPrice.value='2.05';
-  homeLine.value='-2.5'; linePrice.value='1.90'; coverPct.value='0';
-  recentWeight.value='0.40'; kellyFrac.value='0.25'; bankroll.value='2000';
-  recalc();
-});
-
-/* ----------------------------- OPTIONAL: ODDS API --------------------------- */
-/* If you want automatic prices, get a free key at theoddsapi.com and paste it below.
-   This demo asks for AU Basketball odds and tries to find the selected teams. */
-const ODDS_API_KEY = ""; // <- put your key here to enable
-fetchOddsBtn.addEventListener('click', async ()=>{
-  if(!ODDS_API_KEY){ alert("Add an API key in the JS (ODDS_API_KEY) to fetch prices."); return; }
-  try{
-    const sport = 'basketball_australia_nbl';
-    const url = `https://api.theoddsapi.com/v4/sports/${sport}/odds/?regions=au&markets=h2h&oddsFormat=decimal&apiKey=${ODDS_API_KEY}`;
-    const res = await fetch(url);
-    const data = await res.json();
-    const h = homeTeam.value, a = awayTeam.value;
-    if(!h || !a){ alert("Select both teams first."); return; }
-    let found = null;
-    for(const game of data){
-      const outcomes = game.bookmakers?.[0]?.markets?.[0]?.outcomes || [];
-      const names = outcomes.map(o=>o.name);
-      if(names.length===2 && names.some(n=>h.includes(n)) && names.some(n=>a.includes(n))){
-        found = outcomes; break;
+    function el(tag, attrs={}, children=[]){
+      const e = document.createElement(tag);
+      for (const k in attrs){
+        if (k === "class") e.className = attrs[k];
+        else if (k === "html") e.innerHTML = attrs[k];
+        else e.setAttribute(k, attrs[k]);
       }
+      (Array.isArray(children) ? children : [children]).forEach(c=>{
+        if (typeof c === "string") e.appendChild(document.createTextNode(c));
+        else if (c) e.appendChild(c);
+      });
+      return e;
     }
-    if(found){
-      const hObj = found.find(o=>h.includes(o.name));
-      const aObj = found.find(o=>a.includes(o.name));
-      if(hObj) homeMarketPrice.value = (+hObj.price).toFixed(2);
-      if(aObj) awayMarketPrice.value = (+aObj.price).toFixed(2);
-      recalc();
-    }else{
-      alert("Couldn’t match teams in the odds feed. Enter prices manually.");
+
+    function teamNamesFrom(games){
+      const set = new Set();
+      games.forEach(g => { set.add(g.home); set.add(g.away); });
+      return Array.from(set).sort();
     }
-  }catch(err){
-    console.error(err); alert("Odds fetch failed; enter prices manually.");
-  }
-});
-</script>
+
+    function resultForTeam(game, team){
+      const isHome = game.home === team;
+      const myScore = isHome ? game.homeScore : game.awayScore;
+      const oppTeam = isHome ? game.away : game.home;
+      const oppScore = isHome ? game.awayScore : game.homeScore;
+      const res = myScore > oppScore ? "W" : "L";
+      return {
+        date: String(game.date),
+        round: game.round ?? "",
+        opponent: oppTeam,
+        location: isHome ? "H" : "A",
+        myScore, oppScore, res
+      };
+    }
+
+    function lastFiveForTeam(allGames, team){
+      const played = allGames
+        .filter(g => g.home === team || g.away === team)
+        .sort(byDateDesc)
+        .map(g => resultForTeam(g, team));
+      const last5 = played.slice(0,5);
+      const wins = last5.filter(x=>x.res==="W").length;
+      const losses = last5.length - wins;
+      const wlString = last5.map(x=>x.res).join(" ");
+      const winPct = last5.length ? Number(((wins/last5.length)*100).toFixed(1)) : 0;
+      return { team, games:last5, wins, losses, winPct, wlString };
+    }
+
+    function computeAllLastFive(allGames){
+      const teams = teamNamesFrom(allGames);
+      const map = {};
+      teams.forEach(t => map[t] = lastFiveForTeam(allGames, t));
+      return map;
+    }
+
+    function wlBadge(ch){ return el("span",{class:"tag " + (ch==="W"?"tag-win":"tag-loss")}, ch); }
+
+    function renderTeamCard(s){
+      const head = el("div", {class:"teamHead"}, [
+        el("img", {class:"logo big", src:getLogoSrc(s.team), alt:s.team + " logo"}),
+        el("div", {}, [
+          el("h3", {style:"margin:0 0 2px;"}, s.team),
+          el("div", {class:"chips"}, [
+            el("span", {class:"pill"}, `Win%: ${s.winPct}%`),
+            el("span", {class:"pill"}, `Record: ${s.wins}-${s.losses}`)
+          ])
+        ])
+      ]);
+
+      const wlRow = el("div", {class:"row"}, s.wlString.split(" ").map(wlBadge));
+
+      const tbl = el("table");
+      tbl.appendChild(el("thead", {}, el("tr",{},[
+        el("th",{}, "Date"),
+        el("th",{}, "R"),
+        el("th",{}, "Opponent"),
+        el("th",{}, "Loc"),
+        el("th",{}, "Score"),
+        el("th",{}, "Res")
+      ])));
+      const tb = el("tbody");
+      s.games.forEach(g=>{
+        tb.appendChild(el("tr",{},[
+          el("td",{}, g.date),
+          el("td",{}, String(g.round)),
+          el("td",{}, [
+            el("img", {class:"logo", src:getLogoSrc(g.opponent), alt:g.opponent + " logo", title:g.opponent}),
+            " ",
+            g.opponent
+          ]),
+          el("td",{}, g.location),
+          el("td",{}, `${g.myScore}–${g.oppScore}`),
+          el("td",{}, g.res),
+        ]));
+      });
+      tbl.appendChild(tb);
+
+      return el("div", {class:"card"}, [head, wlRow, tbl]);
+    }
+
+    /* =======================
+       Page Logic
+       ======================= */
+    const summaryDiv = document.getElementById("summary");
+    const exportBox = document.getElementById("exportBox");
+    const teamFilter = document.getElementById("teamFilter");
+    const reloadBtn = document.getElementById("reloadBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const jsonPathInput = document.getElementById("jsonPath");
+
+    let rawGames = [];
+    let summaries = {};
+
+    async function loadAndCompute(){
+      const path = jsonPathInput.value.trim();
+      const res = await fetch(path + (path.includes("?") ? "&" : "?") + "t=" + Date.now());
+      if (!res.ok){ throw new Error("Failed to load JSON at " + path); }
+      const data = await res.json();
+
+      // Validate & normalise
+      rawGames = data
+        .filter(g => g && g.date && g.home && g.away && Number.isFinite(g.homeScore) && Number.isFinite(g.awayScore))
+        .map(g => ({...g, date: String(g.date)}))
+        .sort(byDateDesc);
+
+      summaries = computeAllLastFive(rawGames);
+
+      // Cache for other pages
+      localStorage.setItem("lastFiveStats", JSON.stringify({
+        updatedAt: new Date().toISOString(),
+        source: path,
+        summaries
+      }));
+
+      render();
+      exportBox.value = JSON.stringify(summaries, null, 2);
+      populateTeamFilter();
+    }
+
+    function populateTeamFilter(){
+      const teams = Object.keys(summaries).sort();
+      const current = teamFilter.value;
+      teamFilter.innerHTML = '<option value="">All teams</option>';
+      teams.forEach(t=>{
+        const opt = document.createElement("option");
+        opt.value = t; opt.textContent = t;
+        teamFilter.appendChild(opt);
+      });
+      if (teams.includes(current)) teamFilter.value = current;
+    }
+
+    function render(){
+      summaryDiv.innerHTML = "";
+      const teams = Object.keys(summaries).sort();
+      const filt = teamFilter.value;
+      teams
+        .filter(t => !filt || t === filt)
+        .forEach(t => summaryDiv.appendChild(renderTeamCard(summaries[t])));
+    }
+
+    reloadBtn.addEventListener("click", () => {
+      loadAndCompute().catch(err => exportBox.value = "Error: " + err.message);
+    });
+    copyBtn.addEventListener("click", ()=>{
+      exportBox.select();
+      document.execCommand("copy");
+    });
+    teamFilter.addEventListener("change", render);
+
+    // Auto-run on load
+    loadAndCompute().catch(err=>{
+      exportBox.value = "Error: " + err.message + "\n\nCheck your JSON path and ensure the file exists in the repo.";
+    });
+
+    /* =======================
+       Helper for other pages
+       ======================= */
+    // After History runs, any page can call:
+    //   const stats = getLastFiveForTeam("Sydney Kings");
+    // to grab the cached summary.
+    window.getLastFiveForTeam = function(team){
+      try{
+        const store = JSON.parse(localStorage.getItem("lastFiveStats") || "{}");
+        return store.summaries?.[team] || null;
+      }catch(e){ return null; }
+    };
+  </script>
 </body>
 </html>
